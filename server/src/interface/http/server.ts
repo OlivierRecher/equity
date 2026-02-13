@@ -1,7 +1,7 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 
 // Infrastructure
+import { createPrismaClient } from '../../infrastructure/database/prisma/prismaClient.js';
 import { PrismaTaskRepository } from '../../infrastructure/database/repositories/PrismaTaskRepository.js';
 import { PrismaUserRepository } from '../../infrastructure/database/repositories/PrismaUserRepository.js';
 
@@ -17,7 +17,7 @@ import { errorHandler } from './middlewares/ErrorHandler.js';
 // Composition Root (Dependency Injection)
 // ─────────────────────────────────────────────────
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // 1. Repositories (Infrastructure → implements Domain ports)
 const taskRepository = new PrismaTaskRepository(prisma);
