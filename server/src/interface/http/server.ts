@@ -7,6 +7,7 @@ import { PrismaUserRepository } from '../../infrastructure/database/repositories
 
 // Application
 import { GetGroupDashboard } from '../../application/use-cases/GetGroupDashboard.js';
+import { CreateTask } from '../../application/use-cases/CreateTask.js';
 
 // Interface
 import { GroupController } from './controllers/GroupController.js';
@@ -25,9 +26,10 @@ const userRepository = new PrismaUserRepository(prisma);
 
 // 2. Use Cases (Application → depends on Domain ports)
 const getGroupDashboard = new GetGroupDashboard(userRepository, taskRepository);
+const createTask = new CreateTask(userRepository, taskRepository);
 
 // 3. Controllers (Interface → depends on Use Cases)
-const groupController = new GroupController(getGroupDashboard);
+const groupController = new GroupController(getGroupDashboard, createTask);
 
 // ─────────────────────────────────────────────────
 // Express App
