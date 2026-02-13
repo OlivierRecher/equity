@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { GroupDashboardDTO } from '../types/dashboard';
+import type { GroupDashboardDTO, CreateTaskInput, TaskCreatedDTO } from '../types/dashboard';
 
 /**
  * API base URL — uses EXPO_PUBLIC_API_URL env var.
@@ -24,8 +24,11 @@ export const queryClient = new QueryClient({
 /**
  * Typed fetch wrapper
  */
-async function apiFetch<T>(path: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${path}`);
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+    });
 
     if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -45,4 +48,17 @@ export function fetchGroupDashboard(
     groupId: string,
 ): Promise<GroupDashboardDTO> {
     return apiFetch<GroupDashboardDTO>(`/groups/${groupId}/dashboard`);
+}
+
+/**
+ * Create a new task in a group
+ */
+export function createTask(
+    groupId: string,
+    input: CreateTaskInput,
+): Promise<TaskCreatedDTO> {
+    return apiFetch<TaskCreatedDTO>(`/groups/${groupId}/tasks`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+    });
 }

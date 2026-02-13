@@ -20,3 +20,22 @@ export interface GroupDashboardDTO {
     balances: UserBalanceDTO[];
     suggestedNextDoer: SuggestedDoerDTO | null;
 }
+
+/**
+ * CreateTask input — sent to POST /groups/:groupId/tasks
+ */
+export interface CreateTaskInput {
+    doerId: string;
+    catalogId?: string;
+    value: number;
+    beneficiaryIds: string[];
+}
+
+export interface TaskCreatedDTO {
+    id: string;
+    value: number;
+    doerId: string;
+    beneficiaryIds: string[];
+    groupId: string;
+    createdAt: string;
+}
