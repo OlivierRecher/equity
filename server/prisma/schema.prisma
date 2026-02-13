@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  memberships      GroupMember[]
+  tasksDone        Task[]            @relation("TaskDoer")
+  tasksBeneficiary TaskBeneficiary[]
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+
+  memberships GroupMember[]
+  catalog     Catalog[]
+  tasks       Task[]
+}
+
+model GroupMember {
+  id       String   @id @default(uuid())
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id])
+  groupId  String
+  group    Group    @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId])
+}
+
+model Catalog {
+  id           String @id @default(uuid())
+  name         String
+  defaultValue Int
+  icon         String
+  groupId      String
+  group        Group  @relation(fields: [groupId], references: [id])
+  tasks        Task[]
+}
+
+model Task {
+  id        String   @id @default(uuid())
+  value     Int
+  createdAt DateTime @default(now())
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id])
+  catalogId String?
+  catalog   Catalog? @relation(fields: [catalogId], references: [id])
+  userId    String
+  doer      User     @relation("TaskDoer", fields: [userId], references: [id])
+
+  beneficiaries TaskBeneficiary[]
+}
+
+model TaskBeneficiary {
+  id     String @id @default(uuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+}
