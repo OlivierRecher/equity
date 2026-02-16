@@ -63,9 +63,26 @@ export interface TaskCreatedDTO {
 export interface UpdateCatalogItemInput {
     name?: string;
     defaultValue?: number;
+    icon?: string;
 }
 
 export interface CatalogItemUpdatedDTO {
+    id: string;
+    name: string;
+    defaultValue: number;
+    icon: string;
+}
+
+/**
+ * CreateCatalogItem input — sent to POST /groups/:groupId/catalog
+ */
+export interface CreateCatalogItemInput {
+    name: string;
+    defaultValue: number;
+    icon: string;
+}
+
+export interface CatalogItemCreatedDTO {
     id: string;
     name: string;
     defaultValue: number;

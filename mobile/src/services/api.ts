@@ -5,6 +5,8 @@ import type {
     TaskCreatedDTO,
     UpdateCatalogItemInput,
     CatalogItemUpdatedDTO,
+    CreateCatalogItemInput,
+    CatalogItemCreatedDTO,
 } from '../types/dashboard';
 
 /**
@@ -73,6 +75,20 @@ export function updateCatalogItem(
         `/groups/${groupId}/catalog/${catalogId}`,
         {
             method: 'PATCH',
+            body: JSON.stringify(input),
+        },
+    );
+}
+
+/** Create a new catalog item */
+export function createCatalogItem(
+    groupId: string,
+    input: CreateCatalogItemInput,
+): Promise<CatalogItemCreatedDTO> {
+    return apiFetch<CatalogItemCreatedDTO>(
+        `/groups/${groupId}/catalog`,
+        {
+            method: 'POST',
             body: JSON.stringify(input),
         },
     );

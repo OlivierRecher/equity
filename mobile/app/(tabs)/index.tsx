@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,8 @@ import ActivityFeed from '../../src/components/dashboard/ActivityFeed';
 import FloatingControlBar from '../../src/components/dashboard/FloatingControlBar';
 import AddTaskSheet from '../../src/components/dashboard/AddTaskSheet';
 import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
-import type { UserBalanceDTO } from '../../src/types/dashboard';
+import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
+import type { UserBalanceDTO, CatalogItemDTO } from '../../src/types/dashboard';
 
 const GROUP_ID = 'group-coloc';
 const CURRENT_USER_ID = 'user-alice';
@@ -59,6 +60,10 @@ function BalanceListItem({ item }: { item: UserBalanceDTO }) {
 export default function DashboardScreen() {
   const addSheetRef = useRef<BottomSheet>(null);
   const catalogSheetRef = useRef<BottomSheet>(null);
+  const catalogFormRef = useRef<BottomSheet>(null);
+
+  // Track which catalog item is being edited (null = create mode)
+  const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard', GROUP_ID],
@@ -75,6 +80,27 @@ export default function DashboardScreen() {
 
   const openCatalogSheet = useCallback(() => {
     catalogSheetRef.current?.snapToIndex(0);
+  }, []);
+
+  // Open form in CREATE mode
+  const openCatalogFormCreate = useCallback(() => {
+    setEditingCatalogItem(null);
+    catalogSheetRef.current?.close();
+    // Small delay so sheets don't overlap
+    setTimeout(() => catalogFormRef.current?.snapToIndex(0), 150);
+  }, []);
+
+  // Open form in EDIT mode
+  const openCatalogFormEdit = useCallback((item: CatalogItemDTO) => {
+    setEditingCatalogItem(item);
+    catalogSheetRef.current?.close();
+    setTimeout(() => catalogFormRef.current?.snapToIndex(0), 150);
+  }, []);
+
+  // Close form → re-open list
+  const closeCatalogForm = useCallback(() => {
+    catalogFormRef.current?.close();
+    setTimeout(() => catalogSheetRef.current?.snapToIndex(0), 150);
   }, []);
 
   if (isLoading) {
@@ -152,8 +178,16 @@ export default function DashboardScreen() {
 
       <CatalogSheet
         ref={catalogSheetRef}
-        groupId={GROUP_ID}
         catalog={data.catalog}
+        onAddPress={openCatalogFormCreate}
+        onItemPress={openCatalogFormEdit}
+      />
+
+      <CatalogFormSheet
+        ref={catalogFormRef}
+        groupId={GROUP_ID}
+        editItem={editingCatalogItem}
+        onClose={closeCatalogForm}
       />
     </SafeAreaView>
   );

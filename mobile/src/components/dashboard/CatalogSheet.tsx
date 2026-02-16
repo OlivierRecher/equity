@@ -1,49 +1,22 @@
-import React, { forwardRef, useState } from 'react';
+import React, { forwardRef } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     Pressable,
-    TextInput,
-    ActivityIndicator,
 } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateCatalogItem } from '../../services/api';
+import { Plus, ChevronRight } from 'lucide-react-native';
 import type { CatalogItemDTO } from '../../types/dashboard';
 
 interface CatalogSheetProps {
-    groupId: string;
     catalog: CatalogItemDTO[];
+    onAddPress: () => void;
+    onItemPress: (item: CatalogItemDTO) => void;
 }
 
 const CatalogSheet = forwardRef<BottomSheet, CatalogSheetProps>(
-    ({ groupId, catalog }, ref) => {
-        const queryClient = useQueryClient();
-        const [editingId, setEditingId] = useState<string | null>(null);
-        const [editValue, setEditValue] = useState('');
-
-        const mutation = useMutation({
-            mutationFn: ({ catalogId, value }: { catalogId: string; value: number }) =>
-                updateCatalogItem(groupId, catalogId, { defaultValue: value }),
-            onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: ['dashboard', groupId] });
-                setEditingId(null);
-                setEditValue('');
-            },
-        });
-
-        const startEditing = (item: CatalogItemDTO) => {
-            setEditingId(item.id);
-            setEditValue(item.defaultValue.toString());
-        };
-
-        const saveEdit = (catalogId: string) => {
-            const numValue = Number.parseInt(editValue, 10);
-            if (Number.isNaN(numValue) || numValue < 0) return;
-            mutation.mutate({ catalogId, value: numValue });
-        };
-
+    ({ catalog, onAddPress, onItemPress }, ref) => {
         return (
             <BottomSheet
                 ref={ref}
@@ -54,53 +27,39 @@ const CatalogSheet = forwardRef<BottomSheet, CatalogSheetProps>(
                 handleIndicatorStyle={styles.handleIndicator}
             >
                 <BottomSheetView style={styles.header}>
-                    <Text style={styles.title}>Catalogue</Text>
-                    <Text style={styles.subtitle}>
-                        Modifier les points n'affecte que les futures tâches
-                    </Text>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.title}>Catalogue</Text>
+                        <Pressable
+                            style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
+                            onPress={onAddPress}
+                        >
+                            <Plus size={16} color="#007AFF" strokeWidth={3} />
+                            <Text style={styles.addButtonText}>Ajouter</Text>
+                        </Pressable>
+                    </View>
                 </BottomSheetView>
 
                 <BottomSheetScrollView contentContainerStyle={styles.list}>
-                    {catalog.map((item) => {
-                        const isEditing = editingId === item.id;
+                    {catalog.map((item) => (
+                        <Pressable
+                            key={item.id}
+                            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                            onPress={() => onItemPress(item)}
+                        >
+                            <Text style={styles.icon}>{item.icon}</Text>
+                            <Text style={styles.name}>{item.name}</Text>
+                            <Text style={styles.value}>{item.defaultValue} pts</Text>
+                            <ChevronRight size={16} color="#C7C7CC" strokeWidth={2.5} />
+                        </Pressable>
+                    ))}
 
-                        return (
-                            <Pressable
-                                key={item.id}
-                                style={styles.row}
-                                onPress={() => !isEditing && startEditing(item)}
-                            >
-                                <Text style={styles.icon}>{item.icon}</Text>
-                                <Text style={styles.name}>{item.name}</Text>
-
-                                {isEditing ? (
-                                    <View style={styles.editRow}>
-                                        <TextInput
-                                            style={styles.input}
-                                            value={editValue}
-                                            onChangeText={setEditValue}
-                                            keyboardType="number-pad"
-                                            autoFocus
-                                            selectTextOnFocus
-                                        />
-                                        <Pressable
-                                            style={styles.saveButton}
-                                            onPress={() => saveEdit(item.id)}
-                                            disabled={mutation.isPending}
-                                        >
-                                            {mutation.isPending ? (
-                                                <ActivityIndicator color="#FFF" size="small" />
-                                            ) : (
-                                                <Text style={styles.saveText}>OK</Text>
-                                            )}
-                                        </Pressable>
-                                    </View>
-                                ) : (
-                                    <Text style={styles.value}>{item.defaultValue} pts</Text>
-                                )}
-                            </Pressable>
-                        );
-                    })}
+                    {catalog.length === 0 && (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>
+                                Aucune tâche dans le catalogue
+                            </Text>
+                        </View>
+                    )}
                 </BottomSheetScrollView>
             </BottomSheet>
         );
@@ -130,15 +89,32 @@ const styles = StyleSheet.create({
         paddingTop: 8,
         paddingBottom: 16,
     },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
     title: {
         fontSize: 22,
         fontWeight: '700',
         color: '#1C1C1E',
-        marginBottom: 4,
     },
-    subtitle: {
-        fontSize: 13,
-        color: '#8E8E93',
+    addButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#EBF3FF',
+        borderRadius: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+    },
+    addButtonPressed: {
+        backgroundColor: '#D6E6FF',
+    },
+    addButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#007AFF',
     },
     list: {
         paddingHorizontal: 24,
@@ -152,6 +128,9 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         padding: 16,
         gap: 12,
+    },
+    rowPressed: {
+        backgroundColor: '#E5E5EA',
     },
     icon: {
         fontSize: 24,
@@ -168,33 +147,12 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         fontVariant: ['tabular-nums'],
     },
-    editRow: {
-        flexDirection: 'row',
+    emptyContainer: {
+        padding: 20,
         alignItems: 'center',
-        gap: 8,
     },
-    input: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: '#007AFF',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        fontSize: 16,
-        fontWeight: '700',
-        width: 60,
-        textAlign: 'center',
-        color: '#1C1C1E',
-    },
-    saveButton: {
-        backgroundColor: '#007AFF',
-        borderRadius: 10,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-    },
-    saveText: {
+    emptyText: {
         fontSize: 14,
-        fontWeight: '700',
-        color: '#FFFFFF',
+        color: '#AEAEB2',
     },
 });
