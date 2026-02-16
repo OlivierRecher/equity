@@ -7,7 +7,7 @@ export class PrismaCatalogRepository implements ICatalogRepository {
     async findByGroupId(groupId: string): Promise<CatalogItem[]> {
         return this.prisma.catalog.findMany({
             where: { groupId },
-            orderBy: { name: 'asc' },
+            orderBy: { createdAt: 'asc' },
         });
     }
 

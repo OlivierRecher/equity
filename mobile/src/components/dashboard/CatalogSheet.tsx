@@ -53,13 +53,14 @@ const CatalogSheet = forwardRef<BottomSheet, CatalogSheetProps>(
                         </Pressable>
                     ))}
 
-                    {catalog.length === 0 && (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>
-                                Aucune tâche dans le catalogue
-                            </Text>
-                        </View>
-                    )}
+                    {/* Add button at end of list */}
+                    <Pressable
+                        style={({ pressed }) => [styles.addRow, pressed && styles.addRowPressed]}
+                        onPress={onAddPress}
+                    >
+                        <Plus size={20} color="#007AFF" strokeWidth={2.5} />
+                        <Text style={styles.addRowText}>Ajouter une tâche</Text>
+                    </Pressable>
                 </BottomSheetScrollView>
             </BottomSheet>
         );
@@ -147,12 +148,24 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         fontVariant: ['tabular-nums'],
     },
-    emptyContainer: {
-        padding: 20,
+    addRow: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+        borderRadius: 14,
+        padding: 16,
+        gap: 8,
+        borderWidth: 1.5,
+        borderColor: '#C7C7CC',
+        borderStyle: 'dashed',
     },
-    emptyText: {
-        fontSize: 14,
-        color: '#AEAEB2',
+    addRowPressed: {
+        backgroundColor: '#F2F2F7',
+    },
+    addRowText: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#007AFF',
     },
 });

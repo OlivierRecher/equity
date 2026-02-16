@@ -44,12 +44,13 @@ model GroupMember {
 }
 
 model Catalog {
-  id           String @id @default(uuid())
+  id           String   @id @default(uuid())
   name         String
   defaultValue Int
   icon         String
+  createdAt    DateTime @default(now())
   groupId      String
-  group        Group  @relation(fields: [groupId], references: [id])
+  group        Group    @relation(fields: [groupId], references: [id])
   tasks        Task[]
 }
 
