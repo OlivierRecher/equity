@@ -9,27 +9,28 @@ import {
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createTask } from '../../services/api';
-import type { UserBalanceDTO } from '../../types/dashboard';
+import type { UserBalanceDTO, CatalogItemDTO } from '../../types/dashboard';
 
-/** Hardcoded catalog items for testing */
-const CATALOG_ITEMS = [
-    { id: 'catalog-trash', emoji: '🗑️', label: 'Poubelle', value: 5 },
-    { id: 'catalog-dishes', emoji: '🍽️', label: 'Vaisselle', value: 10 },
-    { id: 'catalog-cooking', emoji: '🍳', label: 'Ménage', value: 20 },
-];
+interface SelectedTask {
+    id: string;
+    icon: string;
+    label: string;
+    value: number;
+}
 
 interface AddTaskSheetProps {
     groupId: string;
     members: UserBalanceDTO[];
+    catalog: CatalogItemDTO[];
     currentUserId: string;
     onClose: () => void;
 }
 
 const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
-    ({ groupId, members, currentUserId, onClose }, ref) => {
+    ({ groupId, members, catalog, currentUserId, onClose }, ref) => {
         const queryClient = useQueryClient();
 
-        const [selectedTask, setSelectedTask] = useState<typeof CATALOG_ITEMS[0] | null>(null);
+        const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
         const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
 
         const snapPoints = useMemo(() => ['65%'], []);
@@ -88,20 +89,27 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                     {/* Task Grid */}
                     <Text style={styles.sectionLabel}>Quelle tâche ?</Text>
                     <View style={styles.taskGrid}>
-                        {CATALOG_ITEMS.map((item) => {
+                        {catalog.map((item) => {
                             const isSelected = selectedTask?.id === item.id;
                             return (
                                 <Pressable
                                     key={item.id}
                                     style={[styles.taskCard, isSelected && styles.taskCardSelected]}
-                                    onPress={() => setSelectedTask(item)}
+                                    onPress={() =>
+                                        setSelectedTask({
+                                            id: item.id,
+                                            icon: item.icon,
+                                            label: item.name,
+                                            value: item.defaultValue,
+                                        })
+                                    }
                                 >
-                                    <Text style={styles.taskEmoji}>{item.emoji}</Text>
+                                    <Text style={styles.taskEmoji}>{item.icon}</Text>
                                     <Text style={[styles.taskLabel, isSelected && styles.taskLabelSelected]}>
-                                        {item.label}
+                                        {item.name}
                                     </Text>
                                     <Text style={[styles.taskValue, isSelected && styles.taskValueSelected]}>
-                                        {item.value} pts
+                                        {item.defaultValue} pts
                                     </Text>
                                 </Pressable>
                             );
@@ -212,8 +220,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 10,
         marginBottom: 24,
+        flexWrap: 'wrap',
     },
     taskCard: {
+        minWidth: 90,
         flex: 1,
         alignItems: 'center',
         backgroundColor: '#F2F2F7',
@@ -235,6 +245,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#1C1C1E',
         marginBottom: 2,
+        textAlign: 'center',
     },
     taskLabelSelected: {
         color: '#007AFF',
@@ -253,6 +264,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 12,
         marginBottom: 28,
+        flexWrap: 'wrap',
     },
     memberChip: {
         alignItems: 'center',

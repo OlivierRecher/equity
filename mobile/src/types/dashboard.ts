@@ -15,10 +15,27 @@ export interface SuggestedDoerDTO {
     userName: string;
 }
 
+export interface TaskHistoryItemDTO {
+    id: string;
+    taskName: string;
+    doerName: string;
+    value: number;
+    date: string;
+}
+
+export interface CatalogItemDTO {
+    id: string;
+    name: string;
+    defaultValue: number;
+    icon: string;
+}
+
 export interface GroupDashboardDTO {
     groupId: string;
     balances: UserBalanceDTO[];
     suggestedNextDoer: SuggestedDoerDTO | null;
+    history: TaskHistoryItemDTO[];
+    catalog: CatalogItemDTO[];
 }
 
 /**
@@ -38,4 +55,19 @@ export interface TaskCreatedDTO {
     beneficiaryIds: string[];
     groupId: string;
     createdAt: string;
+}
+
+/**
+ * UpdateCatalogItem input — sent to PATCH /groups/:groupId/catalog/:catalogId
+ */
+export interface UpdateCatalogItemInput {
+    name?: string;
+    defaultValue?: number;
+}
+
+export interface CatalogItemUpdatedDTO {
+    id: string;
+    name: string;
+    defaultValue: number;
+    icon: string;
 }

@@ -1,10 +1,14 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { GroupDashboardDTO, CreateTaskInput, TaskCreatedDTO } from '../types/dashboard';
+import type {
+    GroupDashboardDTO,
+    CreateTaskInput,
+    TaskCreatedDTO,
+    UpdateCatalogItemInput,
+    CatalogItemUpdatedDTO,
+} from '../types/dashboard';
 
 /**
  * API base URL — uses EXPO_PUBLIC_API_URL env var.
- * Falls back to localhost:3000 for iOS Simulator.
- * For physical devices / Android emulator, set this to your machine's local IP.
  */
 const API_BASE_URL =
     process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -41,18 +45,14 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-/**
- * Fetch group dashboard data
- */
+/** Fetch group dashboard data */
 export function fetchGroupDashboard(
     groupId: string,
 ): Promise<GroupDashboardDTO> {
     return apiFetch<GroupDashboardDTO>(`/groups/${groupId}/dashboard`);
 }
 
-/**
- * Create a new task in a group
- */
+/** Create a new task */
 export function createTask(
     groupId: string,
     input: CreateTaskInput,
@@ -61,4 +61,19 @@ export function createTask(
         method: 'POST',
         body: JSON.stringify(input),
     });
+}
+
+/** Update a catalog item */
+export function updateCatalogItem(
+    groupId: string,
+    catalogId: string,
+    input: UpdateCatalogItemInput,
+): Promise<CatalogItemUpdatedDTO> {
+    return apiFetch<CatalogItemUpdatedDTO>(
+        `/groups/${groupId}/catalog/${catalogId}`,
+        {
+            method: 'PATCH',
+            body: JSON.stringify(input),
+        },
+    );
 }

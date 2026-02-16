@@ -6,18 +6,20 @@ import {
   SafeAreaView,
   ScrollView,
   ActivityIndicator,
-  Pressable,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRightLeft, Plus } from 'lucide-react-native';
+import { ArrowRightLeft } from 'lucide-react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { fetchGroupDashboard } from '../../src/services/api';
 import BalanceChart from '../../src/components/dashboard/BalanceChart';
+import ActivityFeed from '../../src/components/dashboard/ActivityFeed';
+import FloatingControlBar from '../../src/components/dashboard/FloatingControlBar';
 import AddTaskSheet from '../../src/components/dashboard/AddTaskSheet';
+import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import type { UserBalanceDTO } from '../../src/types/dashboard';
 
 const GROUP_ID = 'group-coloc';
-const CURRENT_USER_ID = 'user-alice'; // Hardcoded for now
+const CURRENT_USER_ID = 'user-alice';
 
 function BalanceListItem({ item }: { item: UserBalanceDTO }) {
   const isPositive = item.balance >= 0;
@@ -55,19 +57,24 @@ function BalanceListItem({ item }: { item: UserBalanceDTO }) {
 }
 
 export default function DashboardScreen() {
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  const addSheetRef = useRef<BottomSheet>(null);
+  const catalogSheetRef = useRef<BottomSheet>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard', GROUP_ID],
     queryFn: () => fetchGroupDashboard(GROUP_ID),
   });
 
-  const openSheet = useCallback(() => {
-    bottomSheetRef.current?.snapToIndex(0);
+  const openAddSheet = useCallback(() => {
+    addSheetRef.current?.snapToIndex(0);
   }, []);
 
-  const closeSheet = useCallback(() => {
-    bottomSheetRef.current?.close();
+  const closeAddSheet = useCallback(() => {
+    addSheetRef.current?.close();
+  }, []);
+
+  const openCatalogSheet = useCallback(() => {
+    catalogSheetRef.current?.snapToIndex(0);
   }, []);
 
   if (isLoading) {
@@ -116,25 +123,37 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Balance List */}
-        <Text style={styles.sectionTitle}>Détails</Text>
+        {/* Balance Details */}
+        <Text style={styles.sectionTitle}>Soldes</Text>
         {data.balances.map((item) => (
           <BalanceListItem key={item.userId} item={item} />
         ))}
+
+        {/* Activity Feed */}
+        <Text style={styles.sectionTitle}>Historique</Text>
+        <ActivityFeed history={data.history} />
       </ScrollView>
 
-      {/* FAB */}
-      <Pressable style={styles.fab} onPress={openSheet}>
-        <Plus size={28} color="#FFFFFF" strokeWidth={3} />
-      </Pressable>
+      {/* Floating Control Bar */}
+      <FloatingControlBar
+        onAddPress={openAddSheet}
+        onCatalogPress={openCatalogSheet}
+      />
 
-      {/* Bottom Sheet */}
+      {/* Bottom Sheets */}
       <AddTaskSheet
-        ref={bottomSheetRef}
+        ref={addSheetRef}
         groupId={GROUP_ID}
         members={data.balances}
+        catalog={data.catalog}
         currentUserId={CURRENT_USER_ID}
-        onClose={closeSheet}
+        onClose={closeAddSheet}
+      />
+
+      <CatalogSheet
+        ref={catalogSheetRef}
+        groupId={GROUP_ID}
+        catalog={data.catalog}
       />
     </SafeAreaView>
   );
@@ -150,7 +169,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   centered: {
     flex: 1,
@@ -265,23 +284,5 @@ const styles = StyleSheet.create({
   },
   balanceNegative: {
     color: '#FF3B30',
-  },
-
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 100,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
   },
 });
