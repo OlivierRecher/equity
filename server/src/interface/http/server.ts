@@ -4,10 +4,13 @@ import express from 'express';
 import { createPrismaClient } from '../../infrastructure/database/prisma/prismaClient.js';
 import { PrismaTaskRepository } from '../../infrastructure/database/repositories/PrismaTaskRepository.js';
 import { PrismaUserRepository } from '../../infrastructure/database/repositories/PrismaUserRepository.js';
+import { PrismaCatalogRepository } from '../../infrastructure/database/repositories/PrismaCatalogRepository.js';
 
 // Application
 import { GetGroupDashboard } from '../../application/use-cases/GetGroupDashboard.js';
 import { CreateTask } from '../../application/use-cases/CreateTask.js';
+import { UpdateCatalogItem } from '../../application/use-cases/UpdateCatalogItem.js';
+import { CreateCatalogItem } from '../../application/use-cases/CreateCatalogItem.js';
 
 // Interface
 import { GroupController } from './controllers/GroupController.js';
@@ -23,13 +26,16 @@ const prisma = createPrismaClient();
 // 1. Repositories (Infrastructure → implements Domain ports)
 const taskRepository = new PrismaTaskRepository(prisma);
 const userRepository = new PrismaUserRepository(prisma);
+const catalogRepository = new PrismaCatalogRepository(prisma);
 
 // 2. Use Cases (Application → depends on Domain ports)
-const getGroupDashboard = new GetGroupDashboard(userRepository, taskRepository);
+const getGroupDashboard = new GetGroupDashboard(userRepository, taskRepository, catalogRepository);
 const createTask = new CreateTask(userRepository, taskRepository);
+const updateCatalogItem = new UpdateCatalogItem(catalogRepository);
+const createCatalogItem = new CreateCatalogItem(catalogRepository);
 
 // 3. Controllers (Interface → depends on Use Cases)
-const groupController = new GroupController(getGroupDashboard, createTask);
+const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem);
 
 // ─────────────────────────────────────────────────
 // Express App

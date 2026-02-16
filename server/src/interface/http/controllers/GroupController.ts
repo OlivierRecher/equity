@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { GetGroupDashboard } from '../../../application/use-cases/GetGroupDashboard.js';
 import type { CreateTask } from '../../../application/use-cases/CreateTask.js';
+import type { UpdateCatalogItem } from '../../../application/use-cases/UpdateCatalogItem.js';
+import type { CreateCatalogItem } from '../../../application/use-cases/CreateCatalogItem.js';
 import type { CreateTaskInputDTO } from '../../../application/dtos/CreateTaskDTO.js';
+import type { UpdateCatalogItemInputDTO } from '../../../application/dtos/UpdateCatalogItemDTO.js';
+import type { CreateCatalogItemInputDTO } from '../../../application/dtos/CreateCatalogItemDTO.js';
 
 /**
  * GroupController — Thin HTTP adapter.
@@ -11,6 +15,8 @@ export class GroupController {
     constructor(
         private readonly getGroupDashboard: GetGroupDashboard,
         private readonly createTask: CreateTask,
+        private readonly updateCatalogItem: UpdateCatalogItem,
+        private readonly createCatalogItem: CreateCatalogItem,
     ) { }
 
     /**
@@ -51,6 +57,56 @@ export class GroupController {
             });
 
             res.status(201).json(task);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * POST /groups/:groupId/catalog
+     */
+    addCatalogItem = async (
+        req: Request<{ groupId: string }, unknown, Omit<CreateCatalogItemInputDTO, 'groupId'>>,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { groupId } = req.params;
+            const { name, defaultValue, icon } = req.body;
+
+            const item = await this.createCatalogItem.execute({
+                groupId,
+                name,
+                defaultValue,
+                icon,
+            });
+
+            res.status(201).json(item);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * PATCH /groups/:groupId/catalog/:catalogId
+     */
+    patchCatalogItem = async (
+        req: Request<{ groupId: string; catalogId: string }, unknown, Omit<UpdateCatalogItemInputDTO, 'catalogId'>>,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { catalogId } = req.params;
+            const { name, defaultValue, icon } = req.body;
+
+            const updated = await this.updateCatalogItem.execute({
+                catalogId,
+                name,
+                defaultValue,
+                icon,
+            });
+
+            res.status(200).json(updated);
         } catch (error) {
             next(error);
         }
