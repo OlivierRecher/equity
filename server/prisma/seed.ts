@@ -1,7 +1,11 @@
 import 'dotenv/config';
+import { hashSync } from 'bcryptjs';
 import { createPrismaClient } from '../src/infrastructure/database/prisma/prismaClient';
 
 const prisma = createPrismaClient();
+
+// Pre-computed hash for test password "password123"
+const testPasswordHash = hashSync('password123', 10);
 
 async function main() {
     console.log('🌱 Seeding database...');
@@ -23,6 +27,7 @@ async function main() {
             id: 'user-alice',
             email: 'alice@equity.app',
             name: 'Alice',
+            passwordHash: testPasswordHash,
         },
     });
 
@@ -31,6 +36,7 @@ async function main() {
             id: 'user-bob',
             email: 'bob@equity.app',
             name: 'Bob',
+            passwordHash: testPasswordHash,
         },
     });
 
@@ -39,6 +45,7 @@ async function main() {
             id: 'user-charlie',
             email: 'charlie@equity.app',
             name: 'Charlie',
+            passwordHash: testPasswordHash,
         },
     });
 

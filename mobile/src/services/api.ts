@@ -27,16 +27,37 @@ export const queryClient = new QueryClient({
     },
 });
 
-/**
- * Typed fetch wrapper
- */
+// ─────────────────────────────────────────────────
+// Dynamic auth headers (set by AuthContext)
+// ─────────────────────────────────────────────────
+
+let _userId: string | null = null;
+let _groupId: string | null = null;
+
+export function setAuthHeaders(userId: string, groupId: string | null) {
+    _userId = userId;
+    _groupId = groupId;
+}
+
+export function clearAuthHeaders() {
+    _userId = null;
+    _groupId = null;
+}
+
+// ─────────────────────────────────────────────────
+// Typed fetch wrapper
+// ─────────────────────────────────────────────────
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+
+    if (_userId) headers['x-user-id'] = _userId;
+    if (_groupId) headers['x-group-id'] = _groupId;
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
-        headers: {
-            'Content-Type': 'application/json',
-            'x-user-id': 'user-bob',
-            'x-group-id': 'group-coloc',
-        },
+        headers,
         ...options,
     });
 
@@ -50,6 +71,37 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
     return response.json() as Promise<T>;
 }
+
+// ─────────────────────────────────────────────────
+// Auth API
+// ─────────────────────────────────────────────────
+
+interface AuthResponse {
+    user: { id: string; name: string; email: string };
+    groupId: string | null;
+}
+
+export function apiLogin(email: string, password: string): Promise<AuthResponse> {
+    return apiFetch<AuthResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+    });
+}
+
+export function apiRegister(
+    name: string,
+    email: string,
+    password: string,
+): Promise<AuthResponse> {
+    return apiFetch<AuthResponse>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password }),
+    });
+}
+
+// ─────────────────────────────────────────────────
+// Dashboard API
+// ─────────────────────────────────────────────────
 
 /** Fetch group dashboard data */
 export function fetchGroupDashboard(

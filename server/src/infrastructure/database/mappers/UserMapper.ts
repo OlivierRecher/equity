@@ -10,6 +10,7 @@ export class UserMapper {
             id: prismaUser.id,
             name: prismaUser.name,
             email: prismaUser.email,
+            passwordHash: prismaUser.passwordHash,
         });
     }
 }

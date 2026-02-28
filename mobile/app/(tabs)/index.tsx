@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowRightLeft } from 'lucide-react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { fetchGroupDashboard } from '../../src/services/api';
+import { useAuth } from '../../src/context/AuthContext';
 import BalanceChart from '../../src/components/dashboard/BalanceChart';
 import ActivityFeed from '../../src/components/dashboard/ActivityFeed';
 import FloatingControlBar from '../../src/components/dashboard/FloatingControlBar';
@@ -19,8 +20,7 @@ import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
 import type { UserBalanceDTO, CatalogItemDTO } from '../../src/types/dashboard';
 
-const GROUP_ID = 'group-coloc';
-const CURRENT_USER_ID = 'user-alice';
+
 
 function BalanceListItem({ item }: { item: UserBalanceDTO }) {
   const isPositive = item.balance >= 0;
@@ -65,9 +65,15 @@ export default function DashboardScreen() {
   // Track which catalog item is being edited (null = create mode)
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
 
+  // ──── Auth Context ──────────────────────────────────────────
+  const { user: authUser, groupId } = useAuth();
+  const currentUserId = authUser?.id ?? '';
+
+  // ──── Data ────────────────────────────────────────────────────
   const { data, isLoading, error } = useQuery({
-    queryKey: ['dashboard', GROUP_ID],
-    queryFn: () => fetchGroupDashboard(GROUP_ID),
+    queryKey: ['dashboard', groupId],
+    queryFn: () => fetchGroupDashboard(groupId!),
+    enabled: !!groupId,
   });
 
   const openAddSheet = useCallback(() => {
@@ -102,6 +108,18 @@ export default function DashboardScreen() {
     catalogFormRef.current?.close();
     setTimeout(() => catalogSheetRef.current?.snapToIndex(0), 150);
   }, []);
+
+  // ──── No group ─────────────────────────────────────────────────
+  if (!groupId) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <Text style={styles.noGroupTitle}>👋</Text>
+        <Text style={styles.noGroupText}>
+          Tu n'appartiens à aucun groupe pour le moment.
+        </Text>
+      </SafeAreaView>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -169,10 +187,10 @@ export default function DashboardScreen() {
       {/* Bottom Sheets */}
       <AddTaskSheet
         ref={addSheetRef}
-        groupId={GROUP_ID}
+        groupId={groupId ?? ''}
         members={data.balances}
         catalog={data.catalog}
-        currentUserId={CURRENT_USER_ID}
+        currentUserId={currentUserId}
         onClose={closeAddSheet}
       />
 
@@ -185,7 +203,7 @@ export default function DashboardScreen() {
 
       <CatalogFormSheet
         ref={catalogFormRef}
-        groupId={GROUP_ID}
+        groupId={groupId ?? ''}
         editItem={editingCatalogItem}
         onClose={closeCatalogForm}
       />
@@ -221,6 +239,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FF3B30',
     textAlign: 'center',
+  },
+  noGroupTitle: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  noGroupText: {
+    fontSize: 17,
+    color: '#8E8E93',
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 
   // Header
