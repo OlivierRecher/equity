@@ -40,9 +40,9 @@ export interface GroupDashboardDTO {
 
 /**
  * CreateTask input — sent to POST /groups/:groupId/tasks
+ * (doerId is now provided by x-user-id header, not body)
  */
 export interface CreateTaskInput {
-    doerId: string;
     catalogId?: string;
     value: number;
     beneficiaryIds: string[];

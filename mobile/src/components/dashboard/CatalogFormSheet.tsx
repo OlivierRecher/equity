@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { forwardRef, useCallback, useMemo, useState, useEffect, useImperativeHandle, useRef } from 'react';
 import {
     View,
     Text,
@@ -6,7 +6,7 @@ import {
     Pressable,
     TextInput,
     ActivityIndicator,
-    ScrollView,
+    Keyboard,
     Modal,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -52,7 +52,29 @@ const CatalogFormSheet = forwardRef<BottomSheet, CatalogFormSheetProps>(
             setShowIconPicker(false);
         }, [editItem]);
 
-        const snapPoints = useMemo(() => ['70%'], []);
+        const SNAP_DEFAULT = 0;
+        const SNAP_KEYBOARD = 1;
+        const SNAP_FULL = 2;
+
+        const snapPoints = useMemo(() => ['70%', '60%', '95%'], []);
+
+        // Internal ref to call snapToIndex on focus while forwarding the external ref
+        const internalRef = useRef<BottomSheet>(null);
+        useImperativeHandle(ref, () => internalRef.current as BottomSheet);
+
+        // Listen to native keyboard events to expand/collapse the sheet
+        useEffect(() => {
+            const showSub = Keyboard.addListener('keyboardWillShow', () => {
+                internalRef.current?.snapToIndex(SNAP_KEYBOARD);
+            });
+            const hideSub = Keyboard.addListener('keyboardWillHide', () => {
+                internalRef.current?.snapToIndex(SNAP_DEFAULT);
+            });
+            return () => {
+                showSub.remove();
+                hideSub.remove();
+            };
+        }, []);
 
         const createMutation = useMutation({
             mutationFn: () =>
@@ -92,7 +114,7 @@ const CatalogFormSheet = forwardRef<BottomSheet, CatalogFormSheetProps>(
         return (
             <>
                 <BottomSheet
-                    ref={ref}
+                    ref={internalRef}
                     index={-1}
                     snapPoints={snapPoints}
                     enablePanDownToClose

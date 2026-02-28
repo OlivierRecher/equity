@@ -44,7 +44,6 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                     .filter((id) => !excludedIds.has(id));
 
                 return createTask(groupId, {
-                    doerId: currentUserId,
                     catalogId: selectedTask.id,
                     value: selectedTask.value,
                     beneficiaryIds,

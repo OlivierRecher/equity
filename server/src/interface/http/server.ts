@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 
 // Infrastructure
 import { createPrismaClient } from '../../infrastructure/database/prisma/prismaClient.js';
@@ -43,6 +44,7 @@ const groupController = new GroupController(getGroupDashboard, createTask, updat
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 // Health check

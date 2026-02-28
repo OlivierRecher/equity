@@ -40,13 +40,14 @@ export class GroupController {
      * POST /groups/:groupId/tasks
      */
     addTask = async (
-        req: Request<{ groupId: string }, unknown, Omit<CreateTaskInputDTO, 'groupId'>>,
+        req: Request<{ groupId: string }, unknown, Omit<CreateTaskInputDTO, 'groupId' | 'doerId'>>,
         res: Response,
         next: NextFunction,
     ): Promise<void> => {
         try {
             const { groupId } = req.params;
-            const { doerId, catalogId, value, beneficiaryIds } = req.body;
+            const doerId = req.user.id; // from SimpleAuthMiddleware
+            const { catalogId, value, beneficiaryIds } = req.body;
 
             const task = await this.createTask.execute({
                 groupId,

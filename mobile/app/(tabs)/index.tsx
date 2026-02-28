@@ -87,14 +87,14 @@ export default function DashboardScreen() {
     setEditingCatalogItem(null);
     catalogSheetRef.current?.close();
     // Small delay so sheets don't overlap
-    setTimeout(() => catalogFormRef.current?.snapToIndex(1), 150);
+    setTimeout(() => catalogFormRef.current?.snapToIndex(0), 150);
   }, []);
 
   // Open form in EDIT mode
   const openCatalogFormEdit = useCallback((item: CatalogItemDTO) => {
     setEditingCatalogItem(item);
     catalogSheetRef.current?.close();
-    setTimeout(() => catalogFormRef.current?.snapToIndex(1), 150);
+    setTimeout(() => catalogFormRef.current?.snapToIndex(0), 150);
   }, []);
 
   // Close form → re-open list

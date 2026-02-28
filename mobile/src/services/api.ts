@@ -32,7 +32,11 @@ export const queryClient = new QueryClient({
  */
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': 'user-bob',
+            'x-group-id': 'group-coloc',
+        },
         ...options,
     });
 
