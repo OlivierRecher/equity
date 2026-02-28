@@ -16,10 +16,10 @@ export const unstable_settings = {
 
 /**
  * Inner navigator with auth guard.
- * Redirects to /auth/login or /(tabs) based on auth state.
+ * Redirects to /auth/login, /hub, or /(tabs) based on auth state.
  */
 function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, groupId, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -32,15 +32,16 @@ function RootNavigator() {
       // Not logged in → go to login
       router.replace('/auth/login');
     } else if (user && inAuthGroup) {
-      // Logged in but on auth screen → go to dashboard
-      router.replace('/(tabs)');
+      // Logged in but on auth screen → go to hub
+      router.replace('/hub' as any);
     }
-  }, [user, isLoading, segments, router]);
+  }, [user, groupId, isLoading, segments, router]);
 
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
+      <Stack.Screen name="hub" options={{ headerShown: false }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
     </Stack>
   );

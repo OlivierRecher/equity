@@ -29,18 +29,19 @@ describe('SimpleAuthMiddleware', () => {
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.json).toHaveBeenCalledWith({
             error: 'Unauthorized',
-            message: 'Missing x-user-id or x-group-id header',
+            message: 'Missing x-user-id header',
         });
         expect(next).not.toHaveBeenCalled();
     });
 
-    it('should return 401 when only x-user-id is provided', () => {
+    it('should call next() when only x-user-id is provided (x-group-id is optional)', () => {
         const { req, res, next } = createMocks({ 'x-user-id': 'user-bob' });
 
         simpleAuthMiddleware(req, res, next);
 
-        expect(res.status).toHaveBeenCalledWith(401);
-        expect(next).not.toHaveBeenCalled();
+        expect(next).toHaveBeenCalledOnce();
+        expect(req.user).toEqual({ id: 'user-bob' });
+        expect(req.group).toBeUndefined();
     });
 
     it('should return 401 when only x-group-id is provided', () => {

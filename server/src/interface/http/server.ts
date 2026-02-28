@@ -15,12 +15,17 @@ import { UpdateCatalogItem } from '../../application/use-cases/UpdateCatalogItem
 import { CreateCatalogItem } from '../../application/use-cases/CreateCatalogItem.js';
 import { RegisterUser } from '../../application/use-cases/RegisterUser.js';
 import { LoginUser } from '../../application/use-cases/LoginUser.js';
+import { CreateGroup } from '../../application/use-cases/CreateGroup.js';
+import { GetUserGroups } from '../../application/use-cases/GetUserGroups.js';
+import { JoinGroup } from '../../application/use-cases/JoinGroup.js';
 
 // Interface
 import { GroupController } from './controllers/GroupController.js';
 import { AuthController } from './controllers/AuthController.js';
+import { SpaceController } from './controllers/SpaceController.js';
 import { createGroupRoutes } from './routes/group.routes.js';
 import { createAuthRoutes } from './routes/auth.routes.js';
+import { createSpaceRoutes } from './routes/space.routes.js';
 import { errorHandler } from './middlewares/ErrorHandler.js';
 
 // ─────────────────────────────────────────────────
@@ -36,16 +41,20 @@ const catalogRepository = new PrismaCatalogRepository(prisma);
 const groupRepository = new PrismaGroupRepository(prisma);
 
 // 2. Use Cases (Application → depends on Domain ports)
-const getGroupDashboard = new GetGroupDashboard(userRepository, taskRepository, catalogRepository);
+const getGroupDashboard = new GetGroupDashboard(userRepository, taskRepository, catalogRepository, groupRepository);
 const createTask = new CreateTask(userRepository, taskRepository);
 const updateCatalogItem = new UpdateCatalogItem(catalogRepository);
 const createCatalogItem = new CreateCatalogItem(catalogRepository);
 const registerUser = new RegisterUser(userRepository);
 const loginUser = new LoginUser(userRepository, groupRepository);
+const createGroup = new CreateGroup(groupRepository, catalogRepository);
+const getUserGroups = new GetUserGroups(groupRepository);
+const joinGroup = new JoinGroup(groupRepository);
 
 // 3. Controllers (Interface → depends on Use Cases)
 const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem);
 const authController = new AuthController(registerUser, loginUser);
+const spaceController = new SpaceController(createGroup, getUserGroups, joinGroup);
 
 // ─────────────────────────────────────────────────
 // Express App
@@ -63,6 +72,7 @@ app.get('/health', (_req, res) => {
 
 // Routes (auth is NOT behind SimpleAuthMiddleware)
 app.use('/auth', createAuthRoutes(authController));
+app.use('/spaces', createSpaceRoutes(spaceController));
 app.use('/groups', createGroupRoutes(groupController));
 
 // Global error handler (must be registered AFTER routes)
@@ -78,6 +88,7 @@ app.listen(PORT, () => {
     console.log(`🚀 EQUITY API running on http://localhost:${PORT}`);
     console.log(`📊 Dashboard: GET http://localhost:${PORT}/groups/:groupId/dashboard`);
     console.log(`🔑 Auth: POST http://localhost:${PORT}/auth/register | /auth/login`);
+    console.log(`🏠 Spaces: GET|POST http://localhost:${PORT}/spaces | POST /spaces/join`);
 });
 
 export default app;

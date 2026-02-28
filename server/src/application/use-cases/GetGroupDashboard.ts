@@ -1,6 +1,7 @@
 import type { ITaskRepository } from '../../domain/ports/ITaskRepository.js';
 import type { IUserRepository } from '../../domain/ports/IUserRepository.js';
 import type { ICatalogRepository } from '../../domain/ports/ICatalogRepository.js';
+import type { IGroupRepository } from '../../domain/ports/IGroupRepository.js';
 import { BalanceCalculator } from '../../domain/services/BalanceCalculator.js';
 import type {
     GroupDashboardDTO,
@@ -23,16 +24,18 @@ export class GetGroupDashboard {
         private readonly userRepository: IUserRepository,
         private readonly taskRepository: ITaskRepository,
         private readonly catalogRepository: ICatalogRepository,
+        private readonly groupRepository: IGroupRepository,
     ) {
         this.balanceCalculator = new BalanceCalculator();
     }
 
     async execute(groupId: string): Promise<GroupDashboardDTO> {
         // 1. Fetch all data in parallel
-        const [users, tasks, catalogItems] = await Promise.all([
+        const [users, tasks, catalogItems, group] = await Promise.all([
             this.userRepository.findByGroupId(groupId),
             this.taskRepository.findByGroupId(groupId),
             this.catalogRepository.findByGroupId(groupId),
+            this.groupRepository.findById(groupId),
         ]);
 
         // 2. Compute balances using domain service
@@ -85,6 +88,7 @@ export class GetGroupDashboard {
 
         return {
             groupId,
+            groupName: group?.name ?? 'Mon espace',
             balances,
             suggestedNextDoer: suggestedUser
                 ? { userId: suggestedUser.id, userName: suggestedUser.name }

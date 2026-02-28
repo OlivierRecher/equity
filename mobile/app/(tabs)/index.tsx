@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
+  Pressable,
   StyleSheet,
   SafeAreaView,
   ScrollView,
@@ -18,6 +19,7 @@ import FloatingControlBar from '../../src/components/dashboard/FloatingControlBa
 import AddTaskSheet from '../../src/components/dashboard/AddTaskSheet';
 import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
+import SpaceSwitcherSheet from '../../src/components/dashboard/SpaceSwitcherSheet';
 import type { UserBalanceDTO, CatalogItemDTO } from '../../src/types/dashboard';
 
 
@@ -61,6 +63,7 @@ export default function DashboardScreen() {
   const addSheetRef = useRef<BottomSheet>(null);
   const catalogSheetRef = useRef<BottomSheet>(null);
   const catalogFormRef = useRef<BottomSheet>(null);
+  const switcherRef = useRef<BottomSheet>(null);
 
   // Track which catalog item is being edited (null = create mode)
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
@@ -147,9 +150,19 @@ export default function DashboardScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <Text style={styles.header}>Dashboard</Text>
-        <Text style={styles.subHeader}>Coloc Test</Text>
+        {/* Header — clickable space name */}
+        <Pressable
+          style={styles.headerRow}
+          onPress={() => switcherRef.current?.snapToIndex(0)}
+        >
+          <Text style={styles.header}>Dashboard</Text>
+          <View style={styles.spaceNameRow}>
+            <Text style={styles.subHeader} numberOfLines={1}>
+              {data.groupName ?? 'Mon espace'}
+            </Text>
+            <Text style={styles.chevron}>▾</Text>
+          </View>
+        </Pressable>
 
         {/* Balance Chart */}
         <BalanceChart balances={data.balances} />
@@ -207,6 +220,11 @@ export default function DashboardScreen() {
         editItem={editingCatalogItem}
         onClose={closeCatalogForm}
       />
+
+      <SpaceSwitcherSheet
+        ref={switcherRef}
+        currentGroupId={groupId ?? ''}
+      />
     </SafeAreaView>
   );
 }
@@ -263,6 +281,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#8E8E93',
     marginBottom: 28,
+  },
+  headerRow: {
+    marginBottom: 4,
+  },
+  spaceNameRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  chevron: {
+    fontSize: 16,
+    color: '#8E8E93',
   },
 
   // Suggestion card

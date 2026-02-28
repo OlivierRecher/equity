@@ -19,6 +19,7 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
+    switchGroup: (newGroupId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -76,6 +77,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await SecureStore.setItemAsync(STORE_KEYS.USER_EMAIL, authUser.email);
             if (authGroupId) {
                 await SecureStore.setItemAsync(STORE_KEYS.GROUP_ID, authGroupId);
+            } else {
+                await SecureStore.deleteItemAsync(STORE_KEYS.GROUP_ID);
             }
         },
         [],
@@ -102,14 +105,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setGroupId(null);
         clearAuthHeaders();
 
-        await SecureStore.deleteItemAsync(STORE_KEYS.USER_ID);
-        await SecureStore.deleteItemAsync(STORE_KEYS.USER_NAME);
-        await SecureStore.deleteItemAsync(STORE_KEYS.USER_EMAIL);
-        await SecureStore.deleteItemAsync(STORE_KEYS.GROUP_ID);
+        try {
+            await SecureStore.deleteItemAsync(STORE_KEYS.USER_ID);
+            await SecureStore.deleteItemAsync(STORE_KEYS.USER_NAME);
+            await SecureStore.deleteItemAsync(STORE_KEYS.USER_EMAIL);
+            await SecureStore.deleteItemAsync(STORE_KEYS.GROUP_ID);
+        } catch {
+            // SecureStore not available (web)
+        }
     }, []);
 
+    const switchGroup = useCallback(
+        async (newGroupId: string) => {
+            setGroupId(newGroupId);
+            if (user) {
+                setAuthHeaders(user.id, newGroupId);
+            }
+            try {
+                await SecureStore.setItemAsync(STORE_KEYS.GROUP_ID, newGroupId);
+            } catch {
+                // SecureStore not available (web)
+            }
+        },
+        [user],
+    );
+
     return (
-        <AuthContext.Provider value={{ user, groupId, isLoading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, groupId, isLoading, login, register, logout, switchGroup }}>
             {children}
         </AuthContext.Provider>
     );

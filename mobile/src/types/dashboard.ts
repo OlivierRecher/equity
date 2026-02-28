@@ -32,6 +32,7 @@ export interface CatalogItemDTO {
 
 export interface GroupDashboardDTO {
     groupId: string;
+    groupName: string;
     balances: UserBalanceDTO[];
     suggestedNextDoer: SuggestedDoerDTO | null;
     history: TaskHistoryItemDTO[];
@@ -87,4 +88,36 @@ export interface CatalogItemCreatedDTO {
     name: string;
     defaultValue: number;
     icon: string;
+}
+
+// ─────────────────────────────────────────────────
+// Space types
+// ─────────────────────────────────────────────────
+
+export interface SpaceDTO {
+    id: string;
+    name: string;
+    code: string;
+    role: string;
+    memberCount: number;
+}
+
+export interface CreateSpaceInput {
+    name: string;
+    template?: 'coloc' | 'family' | 'custom';
+}
+
+export interface CreateSpaceOutput {
+    id: string;
+    name: string;
+    code: string;
+}
+
+export interface JoinSpaceInput {
+    code: string;
+}
+
+export interface JoinSpaceOutput {
+    groupId: string;
+    groupName: string;
 }

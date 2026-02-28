@@ -28,6 +28,7 @@ export interface CatalogItemDTO {
 
 export interface GroupDashboardDTO {
     readonly groupId: string;
+    readonly groupName: string;
     readonly balances: UserBalanceDTO[];
     readonly suggestedNextDoer: SuggestedDoerDTO | null;
     readonly history: TaskHistoryItemDTO[];

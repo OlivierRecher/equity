@@ -7,6 +7,11 @@ import type {
     CatalogItemUpdatedDTO,
     CreateCatalogItemInput,
     CatalogItemCreatedDTO,
+    SpaceDTO,
+    CreateSpaceInput,
+    CreateSpaceOutput,
+    JoinSpaceInput,
+    JoinSpaceOutput,
 } from '../types/dashboard';
 
 /**
@@ -149,3 +154,29 @@ export function createCatalogItem(
         },
     );
 }
+
+// ─────────────────────────────────────────────────
+// Space API
+// ─────────────────────────────────────────────────
+
+/** Fetch user's spaces */
+export function fetchUserSpaces(): Promise<SpaceDTO[]> {
+    return apiFetch<SpaceDTO[]>('/spaces');
+}
+
+/** Create a new space */
+export function createSpace(input: CreateSpaceInput): Promise<CreateSpaceOutput> {
+    return apiFetch<CreateSpaceOutput>('/spaces', {
+        method: 'POST',
+        body: JSON.stringify(input),
+    });
+}
+
+/** Join a space by invite code */
+export function joinSpace(input: JoinSpaceInput): Promise<JoinSpaceOutput> {
+    return apiFetch<JoinSpaceOutput>('/spaces/join', {
+        method: 'POST',
+        body: JSON.stringify(input),
+    });
+}
+
