@@ -2,7 +2,6 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
-  Pressable,
   StyleSheet,
   SafeAreaView,
   ScrollView,
@@ -19,9 +18,8 @@ import FloatingControlBar from '../../src/components/dashboard/FloatingControlBa
 import AddTaskSheet from '../../src/components/dashboard/AddTaskSheet';
 import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
-import SpaceSwitcherSheet from '../../src/components/dashboard/SpaceSwitcherSheet';
+import SpacePullDown from '../../src/components/dashboard/SpacePullDown';
 import type { UserBalanceDTO, CatalogItemDTO } from '../../src/types/dashboard';
-
 
 
 function BalanceListItem({ item }: { item: UserBalanceDTO }) {
@@ -63,7 +61,6 @@ export default function DashboardScreen() {
   const addSheetRef = useRef<BottomSheet>(null);
   const catalogSheetRef = useRef<BottomSheet>(null);
   const catalogFormRef = useRef<BottomSheet>(null);
-  const switcherRef = useRef<BottomSheet>(null);
 
   // Track which catalog item is being edited (null = create mode)
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
@@ -95,7 +92,6 @@ export default function DashboardScreen() {
   const openCatalogFormCreate = useCallback(() => {
     setEditingCatalogItem(null);
     catalogSheetRef.current?.close();
-    // Small delay so sheets don't overlap
     setTimeout(() => catalogFormRef.current?.snapToIndex(0), 150);
   }, []);
 
@@ -112,16 +108,9 @@ export default function DashboardScreen() {
     setTimeout(() => catalogSheetRef.current?.snapToIndex(0), 150);
   }, []);
 
-  // ──── No group ─────────────────────────────────────────────────
+  // ──── No group → handled by root _layout redirect ───────────────
   if (!groupId) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.noGroupTitle}>👋</Text>
-        <Text style={styles.noGroupText}>
-          Tu n'appartiens à aucun groupe pour le moment.
-        </Text>
-      </SafeAreaView>
-    );
+    return null;
   }
 
   if (isLoading) {
@@ -144,88 +133,71 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header — clickable space name */}
-        <Pressable
-          style={styles.headerRow}
-          onPress={() => switcherRef.current?.snapToIndex(0)}
+    <SpacePullDown groupName={data.groupName ?? 'Mon espace'}>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.header}>Dashboard</Text>
-          <View style={styles.spaceNameRow}>
-            <Text style={styles.subHeader} numberOfLines={1}>
-              {data.groupName ?? 'Mon espace'}
-            </Text>
-            <Text style={styles.chevron}>▾</Text>
-          </View>
-        </Pressable>
+          {/* Balance Chart */}
+          <BalanceChart balances={data.balances} />
 
-        {/* Balance Chart */}
-        <BalanceChart balances={data.balances} />
-
-        {/* Suggested Next Doer */}
-        {data.suggestedNextDoer && (
-          <View style={styles.suggestionCard}>
-            <ArrowRightLeft size={18} color="#007AFF" strokeWidth={2.5} />
-            <Text style={styles.suggestionText}>
-              Prochaine tâche suggérée pour{' '}
-              <Text style={styles.suggestionName}>
-                {data.suggestedNextDoer.userName}
+          {/* Suggested Next Doer */}
+          {data.suggestedNextDoer && (
+            <View style={styles.suggestionCard}>
+              <ArrowRightLeft size={18} color="#007AFF" strokeWidth={2.5} />
+              <Text style={styles.suggestionText}>
+                Prochaine tâche suggérée pour{' '}
+                <Text style={styles.suggestionName}>
+                  {data.suggestedNextDoer.userName}
+                </Text>
               </Text>
-            </Text>
-          </View>
-        )}
+            </View>
+          )}
 
-        {/* Balance Details */}
-        <Text style={styles.sectionTitle}>Soldes</Text>
-        {data.balances.map((item) => (
-          <BalanceListItem key={item.userId} item={item} />
-        ))}
+          {/* Balance Details */}
+          <Text style={styles.sectionTitle}>Soldes</Text>
+          {data.balances.map((item) => (
+            <BalanceListItem key={item.userId} item={item} />
+          ))}
 
-        {/* Activity Feed */}
-        <Text style={styles.sectionTitle}>Historique</Text>
-        <ActivityFeed history={data.history} />
-      </ScrollView>
+          {/* Activity Feed */}
+          <Text style={styles.sectionTitle}>Historique</Text>
+          <ActivityFeed history={data.history} />
+        </ScrollView>
 
-      {/* Floating Control Bar */}
-      <FloatingControlBar
-        onAddPress={openAddSheet}
-        onCatalogPress={openCatalogSheet}
-      />
+        {/* Floating Control Bar */}
+        <FloatingControlBar
+          onAddPress={openAddSheet}
+          onCatalogPress={openCatalogSheet}
+        />
 
-      {/* Bottom Sheets */}
-      <AddTaskSheet
-        ref={addSheetRef}
-        groupId={groupId ?? ''}
-        members={data.balances}
-        catalog={data.catalog}
-        currentUserId={currentUserId}
-        onClose={closeAddSheet}
-      />
+        {/* Bottom Sheets */}
+        <AddTaskSheet
+          ref={addSheetRef}
+          groupId={groupId ?? ''}
+          members={data.balances}
+          catalog={data.catalog}
+          currentUserId={currentUserId}
+          onClose={closeAddSheet}
+        />
 
-      <CatalogSheet
-        ref={catalogSheetRef}
-        catalog={data.catalog}
-        onAddPress={openCatalogFormCreate}
-        onItemPress={openCatalogFormEdit}
-      />
+        <CatalogSheet
+          ref={catalogSheetRef}
+          catalog={data.catalog}
+          onAddPress={openCatalogFormCreate}
+          onItemPress={openCatalogFormEdit}
+        />
 
-      <CatalogFormSheet
-        ref={catalogFormRef}
-        groupId={groupId ?? ''}
-        editItem={editingCatalogItem}
-        onClose={closeCatalogForm}
-      />
-
-      <SpaceSwitcherSheet
-        ref={switcherRef}
-        currentGroupId={groupId ?? ''}
-      />
-    </SafeAreaView>
+        <CatalogFormSheet
+          ref={catalogFormRef}
+          groupId={groupId ?? ''}
+          editItem={editingCatalogItem}
+          onClose={closeCatalogForm}
+        />
+      </SafeAreaView>
+    </SpacePullDown>
   );
 }
 
@@ -239,6 +211,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+    paddingTop: 8,
     paddingBottom: 120,
   },
   centered: {
@@ -257,42 +230,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#FF3B30',
     textAlign: 'center',
-  },
-  noGroupTitle: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  noGroupText: {
-    fontSize: 17,
-    color: '#8E8E93',
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-
-  // Header
-  header: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#1C1C1E',
-    marginBottom: 4,
-  },
-  subHeader: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#8E8E93',
-    marginBottom: 28,
-  },
-  headerRow: {
-    marginBottom: 4,
-  },
-  spaceNameRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 4,
-  },
-  chevron: {
-    fontSize: 16,
-    color: '#8E8E93',
   },
 
   // Suggestion card

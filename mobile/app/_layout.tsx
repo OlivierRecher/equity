@@ -27,21 +27,23 @@ function RootNavigator() {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === 'auth';
+    const inHubGroup = segments[0] === 'hub';
 
     if (!user && !inAuthGroup) {
       // Not logged in → go to login
       router.replace('/auth/login');
-    } else if (user && inAuthGroup) {
-      // Logged in but on auth screen → go to hub
+    } else if (user && !groupId && !inHubGroup) {
       router.replace('/hub' as any);
+    } else if (user && groupId && inAuthGroup) {
+      router.replace('/(tabs)');
     }
   }, [user, groupId, isLoading, segments, router]);
 
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="auth" options={{ headerShown: false }} />
-      <Stack.Screen name="hub" options={{ headerShown: false }} />
+    <Stack screenOptions={{ animation: 'slide_from_bottom' }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
+      <Stack.Screen name="auth" options={{ headerShown: false, animation: 'fade' }} />
+      <Stack.Screen name="hub" options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
     </Stack>
   );
