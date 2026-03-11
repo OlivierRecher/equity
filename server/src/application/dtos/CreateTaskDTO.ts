@@ -3,7 +3,7 @@
  */
 export interface CreateTaskInputDTO {
     groupId: string;
-    doerId: string;
+    doerIds?: string[]; // Optional: defaults to the current user in controller
     catalogId?: string;
     value: number;
     beneficiaryIds: string[];
@@ -15,7 +15,7 @@ export interface CreateTaskInputDTO {
 export interface TaskCreatedDTO {
     id: string;
     value: number;
-    doerId: string;
+    doerIds: string[];
     beneficiaryIds: string[];
     groupId: string;
     createdAt: string;

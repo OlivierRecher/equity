@@ -32,7 +32,7 @@ export class DeleteTask {
         }
 
         // 3. Check permissions: doer OR admin
-        const isDoer = task.userId === userId;
+        const isDoer = task.doerIds.includes(userId);
 
         if (!isDoer) {
             const role = await this.groupRepository.getMemberRole(groupId, userId);

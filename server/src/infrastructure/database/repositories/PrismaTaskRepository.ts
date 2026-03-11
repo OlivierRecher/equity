@@ -9,7 +9,7 @@ export class PrismaTaskRepository implements ITaskRepository {
     async findByGroupId(groupId: string): Promise<Task[]> {
         const prismaTasks = await this.prisma.task.findMany({
             where: { groupId },
-            include: { beneficiaries: true },
+            include: { beneficiaries: true, doers: true },
             orderBy: { createdAt: 'desc' },
         });
 
@@ -19,7 +19,7 @@ export class PrismaTaskRepository implements ITaskRepository {
     async findById(taskId: string): Promise<Task | null> {
         const prismaTask = await this.prisma.task.findUnique({
             where: { id: taskId },
-            include: { beneficiaries: true },
+            include: { beneficiaries: true, doers: true },
         });
 
         return prismaTask ? TaskMapper.toDomain(prismaTask) : null;
@@ -30,7 +30,7 @@ export class PrismaTaskRepository implements ITaskRepository {
 
         const savedTask = await this.prisma.task.create({
             data,
-            include: { beneficiaries: true },
+            include: { beneficiaries: true, doers: true },
         });
 
         return TaskMapper.toDomain(savedTask);

@@ -1,11 +1,10 @@
 import React, { forwardRef } from 'react';
 import {
-    View,
     Text,
     StyleSheet,
     Pressable,
 } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Plus, ChevronRight } from 'lucide-react-native';
 import type { CatalogItemDTO } from '../../types/dashboard';
 
@@ -26,18 +25,7 @@ const CatalogSheet = forwardRef<BottomSheet, CatalogSheetProps>(
                 backgroundStyle={styles.sheetBackground}
                 handleIndicatorStyle={styles.handleIndicator}
             >
-                <BottomSheetView style={styles.header}>
-                    <View style={styles.headerRow}>
-                        <Text style={styles.title}>Catalogue</Text>
-                        <Pressable
-                            style={({ pressed }) => [styles.addButton, pressed && styles.addButtonPressed]}
-                            onPress={onAddPress}
-                        >
-                            <Plus size={16} color="#007AFF" strokeWidth={3} />
-                            <Text style={styles.addButtonText}>Ajouter</Text>
-                        </Pressable>
-                    </View>
-                </BottomSheetView>
+
 
                 <BottomSheetScrollView contentContainerStyle={styles.list}>
                     {catalog.map((item) => (
@@ -85,38 +73,7 @@ const styles = StyleSheet.create({
         width: 36,
         height: 4,
     },
-    header: {
-        paddingHorizontal: 24,
-        paddingTop: 8,
-        paddingBottom: 16,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    title: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#1C1C1E',
-    },
-    addButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: '#EBF3FF',
-        borderRadius: 20,
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-    },
-    addButtonPressed: {
-        backgroundColor: '#D6E6FF',
-    },
-    addButtonText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#007AFF',
-    },
+
     list: {
         paddingHorizontal: 24,
         paddingBottom: 40,

@@ -8,6 +8,7 @@ export interface UpdateTaskInputDTO {
     catalogId?: string;
     value: number;
     beneficiaryIds: string[];
+    doerIds?: string[];
 }
 
 /**
@@ -24,7 +25,7 @@ export class UpdateTask {
     ) {}
 
     async execute(input: UpdateTaskInputDTO): Promise<void> {
-        const { taskId, groupId, userId, catalogId, value, beneficiaryIds } = input;
+        const { taskId, groupId, userId, catalogId, value, beneficiaryIds, doerIds } = input;
 
         // 1. Find the task
         const task = await this.taskRepository.findById(taskId);
@@ -38,7 +39,7 @@ export class UpdateTask {
         }
 
         // 3. Check permissions: doer OR admin
-        const isDoer = task.userId === userId;
+        const isDoer = task.doerIds.includes(userId);
         if (!isDoer) {
             const role = await this.groupRepository.getMemberRole(groupId, userId);
             if (role !== 'ADMIN') {
@@ -58,12 +59,12 @@ export class UpdateTask {
         // 5. Delete old task (cascade deletes beneficiaries)
         await this.taskRepository.delete(taskId);
 
-        // 6. Create updated task (preserving original doer and creation date)
+        // 6. Create updated task (preserving original doers if not updated and creation date)
         const { Task } = await import('../../domain/entities/Task.js');
         const updatedTask = new Task({
             id: taskId,
             value,
-            userId: task.userId,
+            doerIds: doerIds ?? task.doerIds,
             groupId,
             catalogId,
             beneficiaryIds,

@@ -34,6 +34,15 @@ export function errorHandler(
         return;
     }
 
+    // Prisma Foreign Key Constraint Failed (often happens if local DB was wiped but app kept old tokens)
+    if (err.name === 'PrismaClientKnownRequestError' && (err as any).code === 'P2003') {
+        res.status(400).json({
+            error: 'ForeignKeyConstraintFailed',
+            message: 'Donnée invalide ou introuvable. Si vous venez de réinitialiser la base de données, déconnectez-vous et reconnectez-vous.',
+        });
+        return;
+    }
+
     // Unknown error → 500
     console.error('[CRITICAL] Unhandled error:', err);
     res.status(500).json({

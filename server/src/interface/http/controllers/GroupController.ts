@@ -44,18 +44,18 @@ export class GroupController {
      * POST /groups/:groupId/tasks
      */
     addTask = async (
-        req: Request<{ groupId: string }, unknown, Omit<CreateTaskInputDTO, 'groupId' | 'doerId'>>,
+        req: Request<{ groupId: string }, unknown, Omit<CreateTaskInputDTO, 'groupId'>>,
         res: Response,
         next: NextFunction,
     ): Promise<void> => {
         try {
             const { groupId } = req.params;
-            const doerId = req.user.id; // from SimpleAuthMiddleware
-            const { catalogId, value, beneficiaryIds } = req.body;
+            const currentUserId = req.user.id; // from SimpleAuthMiddleware
+            const { catalogId, value, beneficiaryIds, doerIds } = req.body;
 
             const task = await this.createTask.execute({
                 groupId,
-                doerId,
+                doerIds: doerIds?.length ? doerIds : [currentUserId],
                 catalogId,
                 value,
                 beneficiaryIds,
@@ -140,14 +140,14 @@ export class GroupController {
      * PATCH /groups/:groupId/tasks/:taskId
      */
     updateTask = async (
-        req: Request<{ groupId: string; taskId: string }, unknown, { catalogId?: string; value: number; beneficiaryIds: string[] }>,
+        req: Request<{ groupId: string; taskId: string }, unknown, { catalogId?: string; value: number; beneficiaryIds: string[]; doerIds?: string[] }>,
         res: Response,
         next: NextFunction,
     ): Promise<void> => {
         try {
             const { groupId, taskId } = req.params;
             const userId = req.user.id;
-            const { catalogId, value, beneficiaryIds } = req.body;
+            const { catalogId, value, beneficiaryIds, doerIds } = req.body;
 
             await this.updateTaskUseCase.execute({
                 taskId,
@@ -156,6 +156,7 @@ export class GroupController {
                 catalogId,
                 value,
                 beneficiaryIds,
+                doerIds,
             });
 
             res.status(200).json({ success: true });

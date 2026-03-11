@@ -18,8 +18,8 @@ export interface SuggestedDoerDTO {
 export interface TaskHistoryItemDTO {
     id: string;
     taskName: string;
-    doerId: string;
-    doerName: string;
+    doerIds: string[];
+    doerNames: string[];
     value: number;
     date: string;
     catalogId?: string;
@@ -50,12 +50,13 @@ export interface CreateTaskInput {
     catalogId?: string;
     value: number;
     beneficiaryIds: string[];
+    doerIds?: string[];
 }
 
 export interface TaskCreatedDTO {
     id: string;
     value: number;
-    doerId: string;
+    doerIds: string[];
     beneficiaryIds: string[];
     groupId: string;
     createdAt: string;

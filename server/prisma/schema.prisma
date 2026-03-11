@@ -17,7 +17,7 @@ model User {
   createdAt    DateTime @default(now())
 
   memberships      GroupMember[]
-  tasksDone        Task[]            @relation("TaskDoer")
+  tasksDone        TaskDoer[]
   tasksBeneficiary TaskBeneficiary[]
 }
 
@@ -63,10 +63,19 @@ model Task {
   group     Group    @relation(fields: [groupId], references: [id])
   catalogId String?
   catalog   Catalog? @relation(fields: [catalogId], references: [id])
-  userId    String
-  doer      User     @relation("TaskDoer", fields: [userId], references: [id])
 
+  doers         TaskDoer[]
   beneficiaries TaskBeneficiary[]
+}
+
+model TaskDoer {
+  id     String @id @default(uuid())
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
 }
 
 model TaskBeneficiary {

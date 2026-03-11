@@ -11,10 +11,9 @@ export interface UserBalance {
 /**
  * BalanceCalculator — Pure domain service for computing user balances.
  *
- * Algorithm (from AGENT.md §3.C):
  *   Balance(U) = Total_Points_Generated(U) - Total_Points_Consumed(U)
  *
- *   Points Generated = Σ task.value (for each task where U is the doer)
+ *   Points Generated = Σ (task.value / nb_doers) (for each task where U is a doer)
  *   Points Consumed  = Σ (task.value / nb_beneficiaries) (for each task where U is a beneficiary)
  *
  * Complexity: O(users + tasks × avg_beneficiaries), effectively O(n).
@@ -45,14 +44,17 @@ export class BalanceCalculator {
         for (const task of tasks) {
             const costPerBeneficiary = task.value / task.beneficiaryIds.length;
 
-            // Points generated for the doer
-            const doerBalance = balances.get(task.userId);
-            if (doerBalance) {
-                balances.set(task.userId, {
-                    ...doerBalance,
-                    pointsGenerated: doerBalance.pointsGenerated + task.value,
-                    balance: doerBalance.balance + task.value,
-                });
+            // Points generated for the doers
+            const pointsPerDoer = task.value / task.doerIds.length;
+            for (const doerId of task.doerIds) {
+                const doerBalance = balances.get(doerId);
+                if (doerBalance) {
+                    balances.set(doerId, {
+                        ...doerBalance,
+                        pointsGenerated: doerBalance.pointsGenerated + pointsPerDoer,
+                        balance: doerBalance.balance + pointsPerDoer,
+                    });
+                }
             }
 
             // Points consumed for each beneficiary

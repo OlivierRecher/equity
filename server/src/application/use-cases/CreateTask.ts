@@ -20,15 +20,20 @@ export class CreateTask {
     ) { }
 
     async execute(input: CreateTaskInputDTO): Promise<TaskCreatedDTO> {
-        const { groupId, doerId, catalogId, value, beneficiaryIds } = input;
+        const { groupId, doerIds, catalogId, value, beneficiaryIds } = input;
 
         // 1. Validate: fetch group members
         const groupUsers = await this.userRepository.findByGroupId(groupId);
         const groupUserIds = new Set(groupUsers.map((u) => u.id));
 
-        // 2. Validate doer belongs to group
-        if (!groupUserIds.has(doerId)) {
-            throw new EntityNotFoundError('User', doerId);
+        // 2. Validate all doers belong to group
+        if (!doerIds || doerIds.length === 0) {
+            throw new Error('At least one doer is required');
+        }
+        for (const id of doerIds) {
+            if (!groupUserIds.has(id)) {
+                throw new EntityNotFoundError('User', id);
+            }
         }
 
         // 3. Validate all beneficiaries belong to group
@@ -42,7 +47,7 @@ export class CreateTask {
         const task = new Task({
             id: randomUUID(),
             value,
-            userId: doerId,
+            doerIds,
             beneficiaryIds,
             groupId,
             catalogId,
@@ -55,7 +60,7 @@ export class CreateTask {
         return {
             id: savedTask.id,
             value: savedTask.value,
-            doerId: savedTask.userId,
+            doerIds: [...savedTask.doerIds],
             beneficiaryIds: [...savedTask.beneficiaryIds],
             groupId: savedTask.groupId,
             createdAt: savedTask.createdAt.toISOString(),

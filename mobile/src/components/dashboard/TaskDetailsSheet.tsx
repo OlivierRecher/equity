@@ -78,12 +78,14 @@ const TaskDetailsSheet = forwardRef<BottomSheet, TaskDetailsSheetProps>(
                             <View style={styles.header}>
                                 <View style={styles.avatar}>
                                     <Text style={styles.avatarText}>
-                                        {task.doerName.charAt(0).toUpperCase()}
+                                        {task.doerNames.length > 1
+                                            ? '+'
+                                            : task.doerNames[0]?.charAt(0).toUpperCase()}
                                     </Text>
                                 </View>
                                 <View style={styles.headerInfo}>
                                     <Text style={styles.taskName}>{task.taskName}</Text>
-                                    <Text style={styles.doerName}>par {task.doerName}</Text>
+                                    <Text style={styles.doerName}>par {task.doerNames.join(' & ')}</Text>
                                 </View>
                                 <Pressable
                                     style={({ pressed }) => [

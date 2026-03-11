@@ -6,7 +6,7 @@ import {
     Pressable,
     ActivityIndicator,
 } from 'react-native';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createTask, updateTask } from '../../services/api';
 import type { UserBalanceDTO, CatalogItemDTO } from '../../types/dashboard';
@@ -23,6 +23,7 @@ export interface EditTaskData {
     catalogId?: string;
     value: number;
     beneficiaryIds?: string[];
+    doerIds?: string[];
 }
 
 interface AddTaskSheetProps {
@@ -40,8 +41,9 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
 
         const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
         const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
+        const [selectedDoerIds, setSelectedDoerIds] = useState<Set<string>>(new Set([currentUserId]));
 
-        const snapPoints = useMemo(() => ['65%'], []);
+        const snapPoints = useMemo(() => ['85%'], []);
 
         const isEditing = !!editTask;
 
@@ -74,8 +76,15 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                 } else {
                     setExcludedIds(new Set());
                 }
+
+                // Pre-fill doers
+                if (editTask.doerIds) {
+                    setSelectedDoerIds(new Set(editTask.doerIds));
+                } else {
+                    setSelectedDoerIds(new Set([currentUserId]));
+                }
             }
-        }, [editTask, catalog, members]);
+        }, [editTask, catalog, members, currentUserId]);
 
         const mutation = useMutation({
             mutationFn: async () => {
@@ -89,6 +98,7 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                     catalogId: selectedTask.id,
                     value: selectedTask.value,
                     beneficiaryIds,
+                    doerIds: Array.from(selectedDoerIds),
                 };
 
                 if (isEditing && editTask) {
@@ -101,6 +111,7 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                 queryClient.invalidateQueries({ queryKey: ['dashboard', groupId] });
                 setSelectedTask(null);
                 setExcludedIds(new Set());
+                setSelectedDoerIds(new Set([currentUserId]));
                 onClose();
             },
         });
@@ -117,8 +128,20 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
             });
         }, []);
 
+        const toggleDoer = useCallback((userId: string) => {
+            setSelectedDoerIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(userId)) {
+                    next.delete(userId);
+                } else {
+                    next.add(userId);
+                }
+                return next;
+            });
+        }, []);
+
         const activeBeneficiaryCount = members.length - excludedIds.size;
-        const canSubmit = selectedTask !== null && activeBeneficiaryCount >= 1 && !mutation.isPending;
+        const canSubmit = selectedTask !== null && activeBeneficiaryCount >= 1 && selectedDoerIds.size >= 1 && !mutation.isPending;
 
         return (
             <BottomSheet
@@ -129,7 +152,7 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                 backgroundStyle={styles.sheetBackground}
                 handleIndicatorStyle={styles.handleIndicator}
             >
-                <BottomSheetView style={styles.content}>
+                <BottomSheetScrollView contentContainerStyle={styles.content}>
                     {/* Title */}
                     <Text style={styles.title}>
                         {isEditing ? 'Modifier la tâche' : 'Ajouter une tâche'}
@@ -165,7 +188,37 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                         })}
                     </View>
 
-                    {/* Members */}
+                    {/* Doers */}
+                    <Text style={styles.sectionLabel}>Fait par ?</Text>
+                    <Text style={styles.sectionHint}>Sélectionne le(s) réalisateur(s)</Text>
+                    <View style={styles.membersRow}>
+                        {members.map((member) => {
+                            const isSelected = selectedDoerIds.has(member.userId);
+                            return (
+                                <Pressable
+                                    key={`doer-${member.userId}`}
+                                    style={[styles.memberChip, !isSelected && styles.memberChipExcluded]}
+                                    onPress={() => toggleDoer(member.userId)}
+                                >
+                                    <View
+                                        style={[
+                                            styles.memberAvatar,
+                                            !isSelected && styles.memberAvatarExcluded,
+                                        ]}
+                                    >
+                                        <Text style={styles.memberAvatarText}>
+                                            {member.userName.charAt(0).toUpperCase()}
+                                        </Text>
+                                    </View>
+                                    <Text style={[styles.memberName, !isSelected && styles.memberNameExcluded]}>
+                                        {member.userName}
+                                    </Text>
+                                </Pressable>
+                            );
+                        })}
+                    </View>
+
+                    {/* Members (Beneficiaries) */}
                     <Text style={styles.sectionLabel}>Pour qui ?</Text>
                     <Text style={styles.sectionHint}>Touche pour exclure un absent</Text>
                     <View style={styles.membersRow}>
@@ -216,7 +269,7 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                             Erreur : {mutation.error?.message ?? 'Réessayez'}
                         </Text>
                     )}
-                </BottomSheetView>
+                </BottomSheetScrollView>
             </BottomSheet>
         );
     },

@@ -39,7 +39,7 @@ export default function ActivityFeed({ history, onTaskPress }: Readonly<Activity
                     <View style={styles.info}>
                         <Text style={styles.taskName}>{item.taskName}</Text>
                         <Text style={styles.detail}>
-                            fait par {item.doerName} le {formatDate(item.date)}
+                            fait par {item.doerNames.join(' & ')} le {formatDate(item.date)}
                         </Text>
                     </View>
                     <Text style={styles.value}>{item.value} pts</Text>

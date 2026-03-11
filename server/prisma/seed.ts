@@ -124,7 +124,9 @@ async function main() {
         data: {
             id: 'task-1',
             value: 10,
-            userId: alice.id,
+            doers: {
+                create: [{ userId: alice.id }],
+            },
             groupId: group.id,
             catalogId: dishwashing.id,
             beneficiaries: {
@@ -142,7 +144,9 @@ async function main() {
         data: {
             id: 'task-2',
             value: 5,
-            userId: bob.id,
+            doers: {
+                create: [{ userId: bob.id }],
+            },
             groupId: group.id,
             catalogId: trash.id,
             beneficiaries: {
@@ -159,7 +163,9 @@ async function main() {
         data: {
             id: 'task-3',
             value: 20,
-            userId: alice.id,
+            doers: {
+                create: [{ userId: alice.id }],
+            },
             groupId: group.id,
             catalogId: cooking.id,
             beneficiaries: {
@@ -177,7 +183,9 @@ async function main() {
         data: {
             id: 'task-4',
             value: 10,
-            userId: charlie.id,
+            doers: {
+                create: [{ userId: charlie.id }],
+            },
             groupId: group.id,
             catalogId: dishwashing.id,
             beneficiaries: {
@@ -190,6 +198,42 @@ async function main() {
     });
 
     console.log('  ✅ Created 4 tasks with beneficiaries');
+
+    // ─────────────────────────────────────────────
+    // 6. Create Large Test Group (10 members)
+    // ─────────────────────────────────────────────
+    console.log('\n🌟 Creating Large Test Group with 10 users...');
+    
+    const largeGroupUsers = [];
+    for (let i = 1; i <= 10; i++) {
+        const user = await prisma.user.create({
+            data: {
+                id: `user-test-${i}`,
+                email: `test${i}@equity.app`,
+                name: `Test User ${i}`,
+                passwordHash: testPasswordHash,
+            },
+        });
+        largeGroupUsers.push(user);
+    }
+    
+    const largeGroup = await prisma.group.create({
+        data: {
+            id: 'group-large',
+            name: 'La Grande Équipe',
+            code: 'LARGE10',
+        },
+    });
+
+    await prisma.groupMember.createMany({
+        data: largeGroupUsers.map((user, index) => ({
+            userId: user.id,
+            groupId: largeGroup.id,
+            role: index === 0 ? 'ADMIN' : 'MEMBER',
+        })),
+    });
+    console.log(`  ✅ Created large test group: ${largeGroup.name} with 10 members.`);
+    console.log(`  🔑 Logs : email "test1@equity.app", password "password123"`);
 
     // ─────────────────────────────────────────────
     // Summary
