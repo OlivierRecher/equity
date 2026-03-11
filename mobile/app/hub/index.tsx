@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
     View,
     Text,
@@ -7,23 +7,16 @@ import {
     StyleSheet,
     SafeAreaView,
     ActivityIndicator,
-    TextInput,
-    Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchUserSpaces, joinSpace } from '../../src/services/api';
+import { useQuery } from '@tanstack/react-query';
+import { fetchUserSpaces } from '../../src/services/api';
 import { useAuth } from '../../src/context/AuthContext';
 import type { SpaceDTO } from '../../src/types/dashboard';
 
 export default function HubScreen() {
     const router = useRouter();
-    const queryClient = useQueryClient();
-    const { user, switchGroup, logout } = useAuth();
-
-    const [showJoinInput, setShowJoinInput] = useState(false);
-    const [joinCode, setJoinCode] = useState('');
-    const [joinLoading, setJoinLoading] = useState(false);
+    const { switchGroup, logout } = useAuth();
 
     const { data: spaces, isLoading } = useQuery({
         queryKey: ['userSpaces'],
@@ -38,22 +31,7 @@ export default function HubScreen() {
         [switchGroup, router],
     );
 
-    const handleJoin = useCallback(async () => {
-        if (!joinCode.trim()) return;
-        setJoinLoading(true);
-        try {
-            const result = await joinSpace({ code: joinCode.trim() });
-            await switchGroup(result.groupId);
-            queryClient.invalidateQueries({ queryKey: ['userSpaces'] });
-            setShowJoinInput(false);
-            setJoinCode('');
-            router.replace('/(tabs)');
-        } catch (e) {
-            Alert.alert('Erreur', (e as Error).message);
-        } finally {
-            setJoinLoading(false);
-        }
-    }, [joinCode, switchGroup, queryClient, router]);
+
 
     const renderSpace = ({ item }: { item: SpaceDTO }) => (
         <Pressable
@@ -107,32 +85,7 @@ export default function HubScreen() {
                     />
                 )}
 
-                {/* Join code input */}
-                {showJoinInput && (
-                    <View style={styles.joinRow}>
-                        <TextInput
-                            style={styles.joinInput}
-                            value={joinCode}
-                            onChangeText={setJoinCode}
-                            placeholder="Code d'invitation"
-                            placeholderTextColor="#C7C7CC"
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            maxLength={6}
-                        />
-                        <Pressable
-                            style={[styles.joinButton, joinLoading && styles.buttonDisabled]}
-                            onPress={handleJoin}
-                            disabled={joinLoading}
-                        >
-                            {joinLoading ? (
-                                <ActivityIndicator color="#FFF" size="small" />
-                            ) : (
-                                <Text style={styles.joinButtonText}>OK</Text>
-                            )}
-                        </Pressable>
-                    </View>
-                )}
+
 
                 {/* Actions */}
                 <View style={styles.actions}>
@@ -145,10 +98,10 @@ export default function HubScreen() {
 
                     <Pressable
                         style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-                        onPress={() => setShowJoinInput(!showJoinInput)}
+                        onPress={() => router.push('/hub/join')}
                     >
                         <Text style={styles.secondaryButtonText}>
-                            {showJoinInput ? 'Annuler' : 'Rejoindre via un code'}
+                            Rejoindre via un code
                         </Text>
                     </Pressable>
                 </View>
@@ -248,33 +201,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 24,
     },
-    joinRow: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 12,
-    },
-    joinInput: {
-        flex: 1,
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#1C1C1E',
-        textAlign: 'center',
-        letterSpacing: 4,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E5EA',
-        paddingVertical: 12,
-    },
-    joinButton: {
-        backgroundColor: '#1C1C1E',
-        borderRadius: 12,
-        paddingHorizontal: 24,
-        justifyContent: 'center',
-    },
-    joinButtonText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#FFFFFF',
-    },
+
     actions: {
         gap: 12,
     },
@@ -302,8 +229,5 @@ const styles = StyleSheet.create({
     },
     buttonPressed: {
         opacity: 0.85,
-    },
-    buttonDisabled: {
-        backgroundColor: '#AEAEB2',
     },
 });

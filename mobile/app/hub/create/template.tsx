@@ -13,7 +13,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 
 type TemplateOption = 'coloc' | 'family' | 'custom';
 
-const TEMPLATES: Array<{ key: TemplateOption; emoji: string; label: string; desc: string }> = [
+const TEMPLATES: { key: TemplateOption; emoji: string; label: string; desc: string }[] = [
     { key: 'coloc', emoji: '🏠', label: 'Colocation', desc: 'Vaisselle, Ménage, Poubelles...' },
     { key: 'family', emoji: '👨‍👩‍👧‍👦', label: 'Famille', desc: 'Repas, Courses, Jardinage...' },
     { key: 'custom', emoji: '✨', label: 'Vide', desc: 'Tu ajouteras tes tâches toi-même' },
@@ -97,7 +97,7 @@ export default function CreateTemplateScreen() {
                     {loading ? (
                         <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
-                        <Text style={styles.buttonText}>Créer l'espace</Text>
+                        <Text style={styles.buttonText}>Créer l&apos;espace</Text>
                     )}
                 </Pressable>
             </View>

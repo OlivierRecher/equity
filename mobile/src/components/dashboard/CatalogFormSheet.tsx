@@ -54,7 +54,6 @@ const CatalogFormSheet = forwardRef<BottomSheet, CatalogFormSheetProps>(
 
         const SNAP_DEFAULT = 0;
         const SNAP_KEYBOARD = 1;
-        const SNAP_FULL = 2;
 
         const snapPoints = useMemo(() => ['70%', '60%', '95%'], []);
 
