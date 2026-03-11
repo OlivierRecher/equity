@@ -190,4 +190,16 @@ L'application ne doit jamais crasher silencieusement ou exposer des stack traces
 - **Types Strictes** : Pas de `any`. Jamais.
 - **Optimisation** : Le calcul des soldes (`BalanceCalculator`) doit être pur et optimisé (complexité O(n)) pour supporter des historiques de milliers de tâches.
 ```
+
+## 9. HISTORIQUE DU PROJET
+
+> **⚠️ IMPORTANT** : Avant de commencer toute modification, lire impérativement le fichier **[PHASES_RECAP.md](./PHASES_RECAP.md)** à la racine du projet.
+> Il contient le récapitulatif détaillé de chaque phase de développement (1 à 10), avec tous les fichiers créés, les endpoints API, l'arborescence complète, et les conventions à respecter.
+> Ce fichier est la source de vérité pour comprendre l'état actuel du projet.
+
+### Règles de mise à jour de PHASES_RECAP.md
+- **Nouvelle phase** : ajouter une section complète décrivant tout ce qui a été implémenté (fichiers, endpoints, composants, décisions d'architecture).
+- **Correctifs sur la phase en cours** : mettre à jour la section de la phase concernée avec les modifications précises (fichiers modifiés/supprimés, changements de comportement).
+- **Correctifs sur des phases passées** : modifier directement la section de la phase concernée pour refléter l'état réel du code. Ne pas laisser d'informations obsolètes — le fichier doit toujours être le reflet exact de ce qui est en production.
+- **Code mort supprimé** : retirer les références aux fichiers/composants supprimés dans les sections concernées, éviter les doublons.
  
