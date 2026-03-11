@@ -18,8 +18,9 @@ import FloatingControlBar from '../../src/components/dashboard/FloatingControlBa
 import AddTaskSheet from '../../src/components/dashboard/AddTaskSheet';
 import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
+import TaskDetailsSheet from '../../src/components/dashboard/TaskDetailsSheet';
 import SpacePullDown from '../../src/components/dashboard/SpacePullDown';
-import type { UserBalanceDTO, CatalogItemDTO } from '../../src/types/dashboard';
+import type { UserBalanceDTO, CatalogItemDTO, TaskHistoryItemDTO } from '../../src/types/dashboard';
 
 
 function BalanceListItem({ item }: { item: UserBalanceDTO }) {
@@ -61,9 +62,12 @@ export default function DashboardScreen() {
   const addSheetRef = useRef<BottomSheet>(null);
   const catalogSheetRef = useRef<BottomSheet>(null);
   const catalogFormRef = useRef<BottomSheet>(null);
+  const taskDetailsRef = useRef<BottomSheet>(null);
 
   // Track which catalog item is being edited (null = create mode)
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
+  // Track which task is being viewed
+  const [selectedTask, setSelectedTask] = useState<TaskHistoryItemDTO | null>(null);
 
   // ──── Auth Context ──────────────────────────────────────────
   const { user: authUser, groupId } = useAuth();
@@ -106,6 +110,17 @@ export default function DashboardScreen() {
   const closeCatalogForm = useCallback(() => {
     catalogFormRef.current?.close();
     setTimeout(() => catalogSheetRef.current?.snapToIndex(0), 150);
+  }, []);
+
+  // Open task details
+  const openTaskDetails = useCallback((task: TaskHistoryItemDTO) => {
+    setSelectedTask(task);
+    taskDetailsRef.current?.snapToIndex(0);
+  }, []);
+
+  const closeTaskDetails = useCallback(() => {
+    taskDetailsRef.current?.close();
+    setSelectedTask(null);
   }, []);
 
   // ──── No group → handled by root _layout redirect ───────────────
@@ -164,7 +179,7 @@ export default function DashboardScreen() {
 
           {/* Activity Feed */}
           <Text style={styles.sectionTitle}>Historique</Text>
-          <ActivityFeed history={data.history} />
+          <ActivityFeed history={data.history} onTaskPress={openTaskDetails} />
         </ScrollView>
 
         {/* Floating Control Bar */}
@@ -195,6 +210,14 @@ export default function DashboardScreen() {
           groupId={groupId ?? ''}
           editItem={editingCatalogItem}
           onClose={closeCatalogForm}
+        />
+
+        <TaskDetailsSheet
+          ref={taskDetailsRef}
+          groupId={groupId ?? ''}
+          currentUserId={currentUserId}
+          task={selectedTask}
+          onClose={closeTaskDetails}
         />
       </SafeAreaView>
     </SpacePullDown>

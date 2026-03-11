@@ -180,3 +180,14 @@ export function joinSpace(input: JoinSpaceInput): Promise<JoinSpaceOutput> {
     });
 }
 
+// ─────────────────────────────────────────────────
+// Task API
+// ─────────────────────────────────────────────────
+
+/** Delete a task */
+export function deleteTask(groupId: string, taskId: string): Promise<void> {
+    return apiFetch<void>(`/groups/${groupId}/tasks/${taskId}`, {
+        method: 'DELETE',
+    });
+}
+

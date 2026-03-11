@@ -18,6 +18,7 @@ export interface SuggestedDoerDTO {
 export interface TaskHistoryItemDTO {
     id: string;
     taskName: string;
+    doerId: string;
     doerName: string;
     value: number;
     date: string;

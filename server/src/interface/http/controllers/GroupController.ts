@@ -3,6 +3,7 @@ import type { GetGroupDashboard } from '../../../application/use-cases/GetGroupD
 import type { CreateTask } from '../../../application/use-cases/CreateTask.js';
 import type { UpdateCatalogItem } from '../../../application/use-cases/UpdateCatalogItem.js';
 import type { CreateCatalogItem } from '../../../application/use-cases/CreateCatalogItem.js';
+import type { DeleteTask } from '../../../application/use-cases/DeleteTask.js';
 import type { CreateTaskInputDTO } from '../../../application/dtos/CreateTaskDTO.js';
 import type { UpdateCatalogItemInputDTO } from '../../../application/dtos/UpdateCatalogItemDTO.js';
 import type { CreateCatalogItemInputDTO } from '../../../application/dtos/CreateCatalogItemDTO.js';
@@ -17,6 +18,7 @@ export class GroupController {
         private readonly createTask: CreateTask,
         private readonly updateCatalogItem: UpdateCatalogItem,
         private readonly createCatalogItem: CreateCatalogItem,
+        private readonly deleteTaskUseCase: DeleteTask,
     ) { }
 
     /**
@@ -108,6 +110,25 @@ export class GroupController {
             });
 
             res.status(200).json(updated);
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * DELETE /groups/:groupId/tasks/:taskId
+     */
+    deleteTask = async (
+        req: Request<{ groupId: string; taskId: string }>,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { groupId, taskId } = req.params;
+            const userId = req.user.id;
+
+            await this.deleteTaskUseCase.execute({ taskId, groupId, userId });
+            res.status(204).send();
         } catch (error) {
             next(error);
         }

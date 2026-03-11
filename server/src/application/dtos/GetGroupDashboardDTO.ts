@@ -14,6 +14,7 @@ export interface SuggestedDoerDTO {
 export interface TaskHistoryItemDTO {
     readonly id: string;
     readonly taskName: string;
+    readonly doerId: string;
     readonly doerName: string;
     readonly value: number;
     readonly date: string;

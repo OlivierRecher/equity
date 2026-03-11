@@ -80,4 +80,13 @@ export class PrismaGroupRepository implements IGroupRepository {
             memberCount: m.group._count.memberships,
         }));
     }
+
+    async getMemberRole(groupId: string, userId: string): Promise<string | null> {
+        const membership = await this.prisma.groupMember.findUnique({
+            where: { userId_groupId: { userId, groupId } },
+            select: { role: true },
+        });
+
+        return membership?.role ?? null;
+    }
 }

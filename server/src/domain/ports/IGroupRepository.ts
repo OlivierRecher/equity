@@ -36,4 +36,7 @@ export interface IGroupRepository {
 
     /** Get all groups a user belongs to, with role and member count. */
     findAllByUserId(userId: string): Promise<UserGroupDTO[]>;
+
+    /** Get the role of a user in a group (or null if not a member). */
+    getMemberRole(groupId: string, userId: string): Promise<string | null>;
 }

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { TaskHistoryItemDTO } from '../../types/dashboard';
 
 interface ActivityFeedProps {
     history: TaskHistoryItemDTO[];
+    onTaskPress?: (task: TaskHistoryItemDTO) => void;
 }
 
 function formatDate(iso: string): string {
@@ -15,7 +16,7 @@ function formatDate(iso: string): string {
     return `${day}/${month} à ${hours}:${mins}`;
 }
 
-export default function ActivityFeed({ history }: ActivityFeedProps) {
+export default function ActivityFeed({ history, onTaskPress }: Readonly<ActivityFeedProps>) {
     if (history.length === 0) {
         return (
             <View style={styles.emptyContainer}>
@@ -27,7 +28,14 @@ export default function ActivityFeed({ history }: ActivityFeedProps) {
     return (
         <View style={styles.container}>
             {history.map((item) => (
-                <View key={item.id} style={styles.row}>
+                <Pressable
+                    key={item.id}
+                    style={({ pressed }) => [
+                        styles.row,
+                        pressed && styles.rowPressed,
+                    ]}
+                    onPress={() => onTaskPress?.(item)}
+                >
                     <View style={styles.info}>
                         <Text style={styles.taskName}>{item.taskName}</Text>
                         <Text style={styles.detail}>
@@ -35,7 +43,7 @@ export default function ActivityFeed({ history }: ActivityFeedProps) {
                         </Text>
                     </View>
                     <Text style={styles.value}>{item.value} pts</Text>
-                </View>
+                </Pressable>
             ))}
         </View>
     );
@@ -64,6 +72,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.02,
         shadowRadius: 6,
         elevation: 1,
+    },
+    rowPressed: {
+        opacity: 0.75,
     },
     info: {
         flex: 1,

@@ -16,6 +16,15 @@ export class PrismaTaskRepository implements ITaskRepository {
         return prismaTasks.map(TaskMapper.toDomain);
     }
 
+    async findById(taskId: string): Promise<Task | null> {
+        const prismaTask = await this.prisma.task.findUnique({
+            where: { id: taskId },
+            include: { beneficiaries: true },
+        });
+
+        return prismaTask ? TaskMapper.toDomain(prismaTask) : null;
+    }
+
     async save(task: Task): Promise<Task> {
         const data = TaskMapper.toPrismaCreate(task);
 

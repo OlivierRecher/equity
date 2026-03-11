@@ -73,6 +73,7 @@ export class GetGroupDashboard {
             taskName: task.catalogId
                 ? catalogMap.get(task.catalogId) ?? 'Tâche'
                 : 'Tâche',
+            doerId: task.userId,
             doerName: userMap.get(task.userId) ?? 'Inconnu',
             value: task.value,
             date: task.createdAt.toISOString(),
