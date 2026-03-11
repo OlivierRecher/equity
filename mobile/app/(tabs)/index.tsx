@@ -16,6 +16,7 @@ import BalanceChart from '../../src/components/dashboard/BalanceChart';
 import ActivityFeed from '../../src/components/dashboard/ActivityFeed';
 import FloatingControlBar from '../../src/components/dashboard/FloatingControlBar';
 import AddTaskSheet from '../../src/components/dashboard/AddTaskSheet';
+import type { EditTaskData } from '../../src/components/dashboard/AddTaskSheet';
 import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
 import TaskDetailsSheet from '../../src/components/dashboard/TaskDetailsSheet';
@@ -68,6 +69,8 @@ export default function DashboardScreen() {
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
   // Track which task is being viewed
   const [selectedTask, setSelectedTask] = useState<TaskHistoryItemDTO | null>(null);
+  // Track task being edited in AddTaskSheet
+  const [editingTask, setEditingTask] = useState<EditTaskData | null>(null);
 
   // ──── Auth Context ──────────────────────────────────────────
   const { user: authUser, groupId } = useAuth();
@@ -81,11 +84,13 @@ export default function DashboardScreen() {
   });
 
   const openAddSheet = useCallback(() => {
+    setEditingTask(null);
     addSheetRef.current?.snapToIndex(0);
   }, []);
 
   const closeAddSheet = useCallback(() => {
     addSheetRef.current?.close();
+    setEditingTask(null);
   }, []);
 
   const openCatalogSheet = useCallback(() => {
@@ -121,6 +126,17 @@ export default function DashboardScreen() {
   const closeTaskDetails = useCallback(() => {
     taskDetailsRef.current?.close();
     setSelectedTask(null);
+  }, []);
+
+  // Edit a task from the details sheet
+  const editTaskFromDetails = useCallback((task: TaskHistoryItemDTO) => {
+    setEditingTask({
+      taskId: task.id,
+      catalogId: task.catalogId,
+      value: task.value,
+      beneficiaryIds: task.beneficiaryIds,
+    });
+    addSheetRef.current?.snapToIndex(0);
   }, []);
 
   // ──── No group → handled by root _layout redirect ───────────────
@@ -195,6 +211,7 @@ export default function DashboardScreen() {
           members={data.balances}
           catalog={data.catalog}
           currentUserId={currentUserId}
+          editTask={editingTask}
           onClose={closeAddSheet}
         />
 
@@ -215,9 +232,9 @@ export default function DashboardScreen() {
         <TaskDetailsSheet
           ref={taskDetailsRef}
           groupId={groupId ?? ''}
-          currentUserId={currentUserId}
           task={selectedTask}
           onClose={closeTaskDetails}
+          onEdit={editTaskFromDetails}
         />
       </SafeAreaView>
     </SpacePullDown>

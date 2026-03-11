@@ -22,6 +22,8 @@ export interface TaskHistoryItemDTO {
     doerName: string;
     value: number;
     date: string;
+    catalogId?: string;
+    beneficiaryIds: string[];
 }
 
 export interface CatalogItemDTO {

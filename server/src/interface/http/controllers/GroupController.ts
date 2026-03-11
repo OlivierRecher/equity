@@ -4,6 +4,7 @@ import type { CreateTask } from '../../../application/use-cases/CreateTask.js';
 import type { UpdateCatalogItem } from '../../../application/use-cases/UpdateCatalogItem.js';
 import type { CreateCatalogItem } from '../../../application/use-cases/CreateCatalogItem.js';
 import type { DeleteTask } from '../../../application/use-cases/DeleteTask.js';
+import type { UpdateTask } from '../../../application/use-cases/UpdateTask.js';
 import type { CreateTaskInputDTO } from '../../../application/dtos/CreateTaskDTO.js';
 import type { UpdateCatalogItemInputDTO } from '../../../application/dtos/UpdateCatalogItemDTO.js';
 import type { CreateCatalogItemInputDTO } from '../../../application/dtos/CreateCatalogItemDTO.js';
@@ -19,6 +20,7 @@ export class GroupController {
         private readonly updateCatalogItem: UpdateCatalogItem,
         private readonly createCatalogItem: CreateCatalogItem,
         private readonly deleteTaskUseCase: DeleteTask,
+        private readonly updateTaskUseCase: UpdateTask,
     ) { }
 
     /**
@@ -129,6 +131,34 @@ export class GroupController {
 
             await this.deleteTaskUseCase.execute({ taskId, groupId, userId });
             res.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * PATCH /groups/:groupId/tasks/:taskId
+     */
+    updateTask = async (
+        req: Request<{ groupId: string; taskId: string }, unknown, { catalogId?: string; value: number; beneficiaryIds: string[] }>,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { groupId, taskId } = req.params;
+            const userId = req.user.id;
+            const { catalogId, value, beneficiaryIds } = req.body;
+
+            await this.updateTaskUseCase.execute({
+                taskId,
+                groupId,
+                userId,
+                catalogId,
+                value,
+                beneficiaryIds,
+            });
+
+            res.status(200).json({ success: true });
         } catch (error) {
             next(error);
         }

@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createTask } from '../../services/api';
+import { createTask, updateTask } from '../../services/api';
 import type { UserBalanceDTO, CatalogItemDTO } from '../../types/dashboard';
 
 interface SelectedTask {
@@ -18,16 +18,24 @@ interface SelectedTask {
     value: number;
 }
 
+export interface EditTaskData {
+    taskId: string;
+    catalogId?: string;
+    value: number;
+    beneficiaryIds?: string[];
+}
+
 interface AddTaskSheetProps {
     groupId: string;
     members: UserBalanceDTO[];
     catalog: CatalogItemDTO[];
     currentUserId: string;
+    editTask?: EditTaskData | null;
     onClose: () => void;
 }
 
 const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
-    ({ groupId, members, catalog, currentUserId, onClose }, ref) => {
+    ({ groupId, members, catalog, currentUserId, editTask, onClose }, ref) => {
         const queryClient = useQueryClient();
 
         const [selectedTask, setSelectedTask] = useState<SelectedTask | null>(null);
@@ -35,19 +43,59 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
 
         const snapPoints = useMemo(() => ['65%'], []);
 
+        const isEditing = !!editTask;
+
+        // Pre-fill form when editTask changes
+        useEffect(() => {
+            if (editTask) {
+                const catalogItem = catalog.find((c) => c.id === editTask.catalogId);
+                if (catalogItem) {
+                    setSelectedTask({
+                        id: catalogItem.id,
+                        icon: catalogItem.icon,
+                        label: catalogItem.name,
+                        value: editTask.value,
+                    });
+                } else {
+                    setSelectedTask(null);
+                }
+
+                // Pre-fill excluded members based on beneficiaryIds
+                if (editTask.beneficiaryIds) {
+                    const allMemberIds = new Set(members.map((m) => m.userId));
+                    const beneficiarySet = new Set(editTask.beneficiaryIds);
+                    const excluded = new Set<string>();
+                    for (const id of allMemberIds) {
+                        if (!beneficiarySet.has(id)) {
+                            excluded.add(id);
+                        }
+                    }
+                    setExcludedIds(excluded);
+                } else {
+                    setExcludedIds(new Set());
+                }
+            }
+        }, [editTask, catalog, members]);
+
         const mutation = useMutation({
-            mutationFn: () => {
+            mutationFn: async () => {
                 if (!selectedTask) throw new Error('No task selected');
 
                 const beneficiaryIds = members
                     .map((m) => m.userId)
                     .filter((id) => !excludedIds.has(id));
 
-                return createTask(groupId, {
+                const taskInput = {
                     catalogId: selectedTask.id,
                     value: selectedTask.value,
                     beneficiaryIds,
-                });
+                };
+
+                if (isEditing && editTask) {
+                    await updateTask(groupId, editTask.taskId, taskInput);
+                } else {
+                    await createTask(groupId, taskInput);
+                }
             },
             onSuccess: () => {
                 queryClient.invalidateQueries({ queryKey: ['dashboard', groupId] });
@@ -83,7 +131,9 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
             >
                 <BottomSheetView style={styles.content}>
                     {/* Title */}
-                    <Text style={styles.title}>Ajouter une tâche</Text>
+                    <Text style={styles.title}>
+                        {isEditing ? 'Modifier la tâche' : 'Ajouter une tâche'}
+                    </Text>
 
                     {/* Task Grid */}
                     <Text style={styles.sectionLabel}>Quelle tâche ?</Text>
@@ -155,7 +205,8 @@ const AddTaskSheet = forwardRef<BottomSheet, AddTaskSheetProps>(
                             <ActivityIndicator color="#FFFFFF" size="small" />
                         ) : (
                             <Text style={styles.submitText}>
-                                Valider{selectedTask ? ` · ${selectedTask.value} pts` : ''}
+                                {isEditing ? 'Modifier' : 'Valider'}
+                                {selectedTask ? ` · ${selectedTask.value} pts` : ''}
                             </Text>
                         )}
                     </Pressable>

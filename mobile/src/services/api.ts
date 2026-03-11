@@ -74,6 +74,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
         );
     }
 
+    if (response.status === 204) {
+        return undefined as unknown as T;
+    }
+
     return response.json() as Promise<T>;
 }
 
@@ -188,6 +192,18 @@ export function joinSpace(input: JoinSpaceInput): Promise<JoinSpaceOutput> {
 export function deleteTask(groupId: string, taskId: string): Promise<void> {
     return apiFetch<void>(`/groups/${groupId}/tasks/${taskId}`, {
         method: 'DELETE',
+    });
+}
+
+/** Update a task */
+export function updateTask(
+    groupId: string,
+    taskId: string,
+    input: CreateTaskInput,
+): Promise<void> {
+    return apiFetch<void>(`/groups/${groupId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
     });
 }
 

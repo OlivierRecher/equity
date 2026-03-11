@@ -19,6 +19,7 @@ import { CreateGroup } from '../../application/use-cases/CreateGroup.js';
 import { GetUserGroups } from '../../application/use-cases/GetUserGroups.js';
 import { JoinGroup } from '../../application/use-cases/JoinGroup.js';
 import { DeleteTask } from '../../application/use-cases/DeleteTask.js';
+import { UpdateTask } from '../../application/use-cases/UpdateTask.js';
 
 // Interface
 import { GroupController } from './controllers/GroupController.js';
@@ -52,9 +53,10 @@ const createGroup = new CreateGroup(groupRepository, catalogRepository);
 const getUserGroups = new GetUserGroups(groupRepository);
 const joinGroup = new JoinGroup(groupRepository);
 const deleteTask = new DeleteTask(taskRepository, groupRepository);
+const updateTask = new UpdateTask(taskRepository, groupRepository);
 
 // 3. Controllers (Interface → depends on Use Cases)
-const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem, deleteTask);
+const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem, deleteTask, updateTask);
 const authController = new AuthController(registerUser, loginUser);
 const spaceController = new SpaceController(createGroup, getUserGroups, joinGroup);
 

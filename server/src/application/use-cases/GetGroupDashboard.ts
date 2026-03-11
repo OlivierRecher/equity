@@ -77,6 +77,8 @@ export class GetGroupDashboard {
             doerName: userMap.get(task.userId) ?? 'Inconnu',
             value: task.value,
             date: task.createdAt.toISOString(),
+            catalogId: task.catalogId,
+            beneficiaryIds: [...task.beneficiaryIds],
         }));
 
         // 7. Build catalog DTO

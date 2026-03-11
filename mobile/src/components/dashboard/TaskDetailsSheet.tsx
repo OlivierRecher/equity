@@ -2,15 +2,15 @@ import React, { forwardRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Alert, Pressable } from 'react-native';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
 import { useQueryClient } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, Pencil } from 'lucide-react-native';
 import { deleteTask } from '../../services/api';
 import type { TaskHistoryItemDTO } from '../../types/dashboard';
 
 interface TaskDetailsSheetProps {
     groupId: string;
-    currentUserId: string;
     task: TaskHistoryItemDTO | null;
     onClose: () => void;
+    onEdit: (task: TaskHistoryItemDTO) => void;
 }
 
 function formatFullDate(iso: string): string {
@@ -24,11 +24,9 @@ function formatFullDate(iso: string): string {
 }
 
 const TaskDetailsSheet = forwardRef<BottomSheet, TaskDetailsSheetProps>(
-    ({ groupId, currentUserId, task, onClose }, ref) => {
+    ({ groupId, task, onClose, onEdit }, ref) => {
         const queryClient = useQueryClient();
-        const snapPoints = useMemo(() => ['42%'], []);
-
-        const canDelete = task?.doerId === currentUserId;
+        const snapPoints = useMemo(() => ['45%'], []);
 
         const handleDelete = useCallback(() => {
             if (!task) return;
@@ -57,6 +55,12 @@ const TaskDetailsSheet = forwardRef<BottomSheet, TaskDetailsSheetProps>(
             );
         }, [task, groupId, queryClient, onClose]);
 
+        const handleEdit = useCallback(() => {
+            if (!task) return;
+            onClose();
+            setTimeout(() => onEdit(task), 200);
+        }, [task, onClose, onEdit]);
+
         return (
             <BottomSheet
                 ref={ref}
@@ -70,7 +74,7 @@ const TaskDetailsSheet = forwardRef<BottomSheet, TaskDetailsSheetProps>(
                 <BottomSheetView style={styles.content}>
                     {task && (
                         <>
-                            {/* Header */}
+                            {/* Header with edit icon */}
                             <View style={styles.header}>
                                 <View style={styles.avatar}>
                                     <Text style={styles.avatarText}>
@@ -81,6 +85,15 @@ const TaskDetailsSheet = forwardRef<BottomSheet, TaskDetailsSheetProps>(
                                     <Text style={styles.taskName}>{task.taskName}</Text>
                                     <Text style={styles.doerName}>par {task.doerName}</Text>
                                 </View>
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.editIcon,
+                                        pressed && styles.editIconPressed,
+                                    ]}
+                                    onPress={handleEdit}
+                                >
+                                    <Pencil size={20} color="#007AFF" strokeWidth={2.2} />
+                                </Pressable>
                             </View>
 
                             {/* Details */}
@@ -98,21 +111,19 @@ const TaskDetailsSheet = forwardRef<BottomSheet, TaskDetailsSheetProps>(
                                 </View>
                             </View>
 
-                            {/* Delete button — only for doer */}
-                            {canDelete && (
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.deleteButton,
-                                        pressed && styles.deleteButtonPressed,
-                                    ]}
-                                    onPress={handleDelete}
-                                >
-                                    <Trash2 size={18} color="#FFFFFF" strokeWidth={2.5} />
-                                    <Text style={styles.deleteButtonText}>
-                                        Supprimer cette tâche
-                                    </Text>
-                                </Pressable>
-                            )}
+                            {/* Delete button — visible for everyone */}
+                            <Pressable
+                                style={({ pressed }) => [
+                                    styles.deleteButton,
+                                    pressed && styles.deleteButtonPressed,
+                                ]}
+                                onPress={handleDelete}
+                            >
+                                <Trash2 size={18} color="#FFFFFF" strokeWidth={2.5} />
+                                <Text style={styles.deleteButtonText}>
+                                    Supprimer cette tâche
+                                </Text>
+                            </Pressable>
                         </>
                     )}
                 </BottomSheetView>
@@ -171,6 +182,17 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: '#8E8E93',
         marginTop: 2,
+    },
+    editIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: '#F2F2F7',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    editIconPressed: {
+        opacity: 0.6,
     },
     detailsCard: {
         backgroundColor: '#F9F9FB',

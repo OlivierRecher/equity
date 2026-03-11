@@ -18,6 +18,8 @@ export interface TaskHistoryItemDTO {
     readonly doerName: string;
     readonly value: number;
     readonly date: string;
+    readonly catalogId?: string;
+    readonly beneficiaryIds: string[];
 }
 
 export interface CatalogItemDTO {

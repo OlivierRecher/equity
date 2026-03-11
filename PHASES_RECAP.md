@@ -315,6 +315,30 @@ server/src/
 
 ---
 
+## Phase 11 — Droit à l'erreur (Édition / Suppression de tâches)
+
+**Commits :** `fadf586 feat(): Phase 11 - edition delete task`
+
+### Ce qui a été fait :
+1. **Suppression (Backend)** :
+   - `findById()` ajouté à `ITaskRepository` et implémenté dans Prisma.
+   - Use case `DeleteTask.ts` : vérifie que l'utilisateur est le créateur ou `ADMIN`, puis supprime (Prisma gère la cascade sur `TaskBeneficiary`).
+   - Route : `DELETE /groups/:groupId/tasks/:taskId`.
+2. **Édition (Backend)** :
+   - Use case `UpdateTask.ts` : vérifie les droits, supprime l'ancienne tâche et recrée la nouvelle (pour gérer proprement les modifications de bénéficiaires) en conservant `createdAt` et `userId` d'origine.
+   - Route : `PATCH /groups/:groupId/tasks/:taskId`.
+3. **Frontend (`AddTaskSheet.tsx` réutilisable)** :
+   - Le formulaire de création de tâche a été rendu intelligent : il accepte une prop optionnelle `editTask`.
+   - Si `editTask` est présent, les champs (tâche, valeur, bénéficiaires exclus) sont pré-remplis, et le bouton submit fait un `PATCH` (via `updateTask`).
+4. **Frontend (`TaskDetailsSheet.tsx`)** :
+   - Nouvelle modale affichant les détails d'une tâche (auteur, date, points) cliquée depuis l'ActivityFeed.
+   - Fournit un bouton "Supprimer" rouge (avec une `Alert` de confirmation native) et une icône "Crayon" (Pencil) en haut à droite pour éditer.
+   - Tous les membres peuvent éditer ou supprimer une tâche (pas de check frontend sur l'auteur, alignement sur la confiance du groupe).
+5. **Corrections (`api.ts`)** :
+   - Customisation de la fonction `apiFetch` pour vérifier si la réponse a le status HTTP `204 No Content` afin d'éviter l'erreur `JSON Parse error` lors du `.json()`.
+
+---
+
 ## API REST — Résumé complet des endpoints
 
 | Méthode | Route | Auth? | Description |
@@ -329,6 +353,8 @@ server/src/
 | `POST` | `/groups/:groupId/tasks` | x-user-id, x-group-id | Créer une tâche |
 | `POST` | `/groups/:groupId/catalog` | x-user-id, x-group-id | Créer un catalog item |
 | `PATCH` | `/groups/:groupId/catalog/:catalogId` | x-user-id, x-group-id | Modifier un catalog item |
+| `DELETE` | `/groups/:groupId/tasks/:taskId` | x-user-id, x-group-id | Supprimer une tâche |
+| `PATCH` | `/groups/:groupId/tasks/:taskId` | x-user-id, x-group-id | Modifier une tâche |
 
 ---
 
