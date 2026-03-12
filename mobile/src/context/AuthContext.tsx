@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { apiLogin, apiRegister, setAuthHeaders, clearAuthHeaders } from '../services/api';
+import { apiLogin, apiRegister, apiUpdateProfile, setAuthHeaders, clearAuthHeaders } from '../services/api';
 
 // ─────────────────────────────────────────────────
 // Types
@@ -12,6 +12,13 @@ interface AuthUser {
     email: string;
 }
 
+interface UpdateProfileInput {
+    name?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+}
+
 interface AuthContextType {
     user: AuthUser | null;
     groupId: string | null;
@@ -20,6 +27,7 @@ interface AuthContextType {
     register: (name: string, email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     switchGroup: (newGroupId: string) => Promise<void>;
+    updateProfile: (input: UpdateProfileInput) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -123,6 +131,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    const updateProfile = useCallback(
+        async (input: UpdateProfileInput) => {
+            const result = await apiUpdateProfile(input);
+            const updatedUser = result.user;
+            setUser(updatedUser);
+
+            try {
+                await SecureStore.setItemAsync(STORE_KEYS.USER_NAME, updatedUser.name);
+                await SecureStore.setItemAsync(STORE_KEYS.USER_EMAIL, updatedUser.email);
+            } catch {
+                // SecureStore not available (web)
+            }
+        },
+        [],
+    );
+
     const switchGroup = useCallback(
         async (newGroupId: string) => {
             setGroupId(newGroupId);
@@ -139,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
 
     return (
-        <AuthContext.Provider value={{ user, groupId, isLoading, login, register, logout, switchGroup }}>
+        <AuthContext.Provider value={{ user, groupId, isLoading, login, register, logout, switchGroup, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

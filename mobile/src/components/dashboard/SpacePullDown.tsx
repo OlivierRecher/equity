@@ -42,7 +42,7 @@ export default function SpacePullDown({ children, groupName, isAdmin, onSettings
     const startY = useSharedValue(0);
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { user, switchGroup, groupId, logout } = useAuth();
+    const { user, switchGroup, groupId } = useAuth();
     const profileSheetRef = React.useRef<BottomSheet>(null);
 
     const { data: spaces, isLoading } = useQuery({
@@ -183,7 +183,7 @@ export default function SpacePullDown({ children, groupName, isAdmin, onSettings
                 </View>
             </SafeAreaView>
 
-            <ProfileSheet ref={profileSheetRef} user={user} onLogout={logout} />
+            <ProfileSheet ref={profileSheetRef} />
 
             {/* ── Foreground: Dashboard ────────────────────────────── */}
             <Animated.View style={[styles.dashboard, dashboardStyle]}>
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     hubHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         marginBottom: 32,
     },
     hubTitle: {
@@ -244,7 +244,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     avatarButton: {
-        paddingTop: 8,
     },
     avatarCircle: {
         width: 40,

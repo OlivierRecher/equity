@@ -25,6 +25,7 @@ import { GetGroupMembers } from '../../application/use-cases/GetGroupMembers.js'
 import { RemoveGroupMember } from '../../application/use-cases/RemoveGroupMember.js';
 import { DeleteGroup } from '../../application/use-cases/DeleteGroup.js';
 import { SoftDeleteCatalogItem } from '../../application/use-cases/SoftDeleteCatalogItem.js';
+import { UpdateUserProfile } from '../../application/use-cases/UpdateUserProfile.js';
 
 // Interface
 import { GroupController } from './controllers/GroupController.js';
@@ -64,10 +65,11 @@ const getGroupMembers = new GetGroupMembers(groupRepository);
 const removeGroupMember = new RemoveGroupMember(groupRepository);
 const deleteGroup = new DeleteGroup(groupRepository);
 const softDeleteCatalogItem = new SoftDeleteCatalogItem(catalogRepository, groupRepository);
+const updateUserProfile = new UpdateUserProfile(userRepository);
 
 // 3. Controllers (Interface → depends on Use Cases)
 const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem, deleteTask, updateTask, softDeleteCatalogItem);
-const authController = new AuthController(registerUser, loginUser);
+const authController = new AuthController(registerUser, loginUser, updateUserProfile);
 const spaceController = new SpaceController(createGroup, getUserGroups, joinGroup, updateGroupName, getGroupMembers, removeGroupMember, deleteGroup);
 
 // ─────────────────────────────────────────────────

@@ -18,7 +18,7 @@ import type { SpaceDTO } from '../../src/types/dashboard';
 
 export default function HubScreen() {
     const router = useRouter();
-    const { user, switchGroup, logout } = useAuth();
+    const { user, switchGroup } = useAuth();
     const profileSheetRef = useRef<BottomSheet>(null);
 
     const { data: spaces, isLoading } = useQuery({
@@ -114,7 +114,7 @@ export default function HubScreen() {
                 </View>
             </View>
 
-            <ProfileSheet ref={profileSheetRef} user={user} onLogout={logout} />
+            <ProfileSheet ref={profileSheetRef} />
         </SafeAreaView>
     );
 }
@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         marginBottom: 32,
     },
     title: {
@@ -144,7 +144,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     avatarButton: {
-        paddingTop: 8,
     },
     avatarCircle: {
         width: 40,

@@ -8,6 +8,7 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
@@ -40,8 +41,9 @@ export default function LoginScreen() {
     };
 
     return (
+        <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView
-            style={styles.container}
+            style={styles.flex}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <View style={styles.content}>
@@ -116,6 +118,7 @@ export default function LoginScreen() {
                 </View>
             </View>
         </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 }
 
@@ -124,11 +127,14 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
+    flex: {
+        flex: 1,
+    },
     content: {
         flex: 1,
         justifyContent: 'space-between',
         paddingHorizontal: 28,
-        paddingTop: 100,
+        paddingTop: 16,
         paddingBottom: 50,
     },
     header: {

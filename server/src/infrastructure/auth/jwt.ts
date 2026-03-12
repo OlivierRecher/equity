@@ -1,6 +1,14 @@
 import jwt from 'jsonwebtoken';
 
-const SECRET = process.env['JWT_SECRET'] ?? 'dev-secret-change-me';
+function getSecret(): string {
+    const secret = process.env['JWT_SECRET'];
+    if (!secret) {
+        throw new Error('JWT_SECRET environment variable is required. Set it in your .env file.');
+    }
+    return secret;
+}
+
+const SECRET: string = getSecret();
 const EXPIRES_IN = '30d';
 
 interface JwtPayload {

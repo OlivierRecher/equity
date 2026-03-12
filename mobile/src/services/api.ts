@@ -110,6 +110,24 @@ export function apiRegister(
     });
 }
 
+interface UpdateProfileInput {
+    name?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+}
+
+interface UpdateProfileResponse {
+    user: { id: string; name: string; email: string };
+}
+
+export function apiUpdateProfile(input: UpdateProfileInput): Promise<UpdateProfileResponse> {
+    return apiFetch<UpdateProfileResponse>('/auth/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+    });
+}
+
 // ─────────────────────────────────────────────────
 // Dashboard API
 // ─────────────────────────────────────────────────

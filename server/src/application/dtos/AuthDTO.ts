@@ -27,3 +27,24 @@ export interface AuthResponseDTO {
     groupId: string | null;
     token: string;
 }
+
+/**
+ * Input DTO for updating user profile
+ */
+export interface UpdateProfileInputDTO {
+    name?: string;
+    email?: string;
+    currentPassword?: string;
+    newPassword?: string;
+}
+
+/**
+ * Output DTO for profile update
+ */
+export interface UpdateProfileResponseDTO {
+    user: {
+        id: string;
+        name: string;
+        email: string;
+    };
+}
