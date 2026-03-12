@@ -5,7 +5,7 @@ import type { JoinGroup } from '../../../application/use-cases/JoinGroup.js';
 
 /**
  * SpaceController — Handles space (group) management.
- * All routes require SimpleAuthMiddleware (req.user.id).
+ * All routes require JwtAuthMiddleware (req.user.id).
  */
 export class SpaceController {
     constructor(

@@ -50,7 +50,7 @@ export class GroupController {
     ): Promise<void> => {
         try {
             const { groupId } = req.params;
-            const currentUserId = req.user.id; // from SimpleAuthMiddleware
+            const currentUserId = req.user.id; // from JwtAuthMiddleware
             const { catalogId, value, beneficiaryIds, doerIds } = req.body;
 
             const task = await this.createTask.execute({

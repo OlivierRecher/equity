@@ -74,7 +74,7 @@ app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes (auth is NOT behind SimpleAuthMiddleware)
+// Routes (auth is NOT behind JwtAuthMiddleware)
 app.use('/auth', createAuthRoutes(authController));
 app.use('/spaces', createSpaceRoutes(spaceController));
 app.use('/groups', createGroupRoutes(groupController));

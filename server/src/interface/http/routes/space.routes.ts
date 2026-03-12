@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import type { SpaceController } from '../controllers/SpaceController.js';
-import { simpleAuthMiddleware } from '../middlewares/SimpleAuthMiddleware.js';
+import { jwtAuthMiddleware } from '../middlewares/JwtAuthMiddleware.js';
 
 /**
- * Space routes — all protected by SimpleAuthMiddleware.
+ * Space routes — all protected by JWT auth.
  */
 export function createSpaceRoutes(controller: SpaceController): Router {
     const router = Router();
 
-    router.use(simpleAuthMiddleware);
+    router.use(jwtAuthMiddleware);
 
     router.get('/', controller.list);
     router.post('/', controller.create);

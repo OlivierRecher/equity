@@ -3,6 +3,7 @@ import type { IUserRepository } from '../../domain/ports/IUserRepository.js';
 import type { IGroupRepository } from '../../domain/ports/IGroupRepository.js';
 import { DomainError } from '../../domain/errors/DomainError.js';
 import type { LoginInputDTO, AuthResponseDTO } from '../dtos/AuthDTO.js';
+import { signToken } from '../../infrastructure/auth/jwt.js';
 
 const INVALID_CREDENTIALS = 'Email ou mot de passe incorrect';
 
@@ -32,6 +33,8 @@ export class LoginUser {
         // 3. Get first group membership
         const groupId = await this.groupRepository.findFirstGroupIdByUserId(user.id);
 
+        const token = signToken({ userId: user.id, email: user.email });
+
         return {
             user: {
                 id: user.id,
@@ -39,6 +42,7 @@ export class LoginUser {
                 email: user.email,
             },
             groupId,
+            token,
         };
     }
 }

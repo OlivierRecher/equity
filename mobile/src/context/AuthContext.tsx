@@ -29,6 +29,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // ─────────────────────────────────────────────────
 
 const STORE_KEYS = {
+    TOKEN: 'equity_token',
     USER_ID: 'equity_user_id',
     USER_NAME: 'equity_user_name',
     USER_EMAIL: 'equity_user_email',
@@ -42,21 +43,24 @@ const STORE_KEYS = {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [groupId, setGroupId] = useState<string | null>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Restore session from SecureStore on mount
     useEffect(() => {
         (async () => {
             try {
+                const token = await SecureStore.getItemAsync(STORE_KEYS.TOKEN);
                 const userId = await SecureStore.getItemAsync(STORE_KEYS.USER_ID);
                 const userName = await SecureStore.getItemAsync(STORE_KEYS.USER_NAME);
                 const userEmail = await SecureStore.getItemAsync(STORE_KEYS.USER_EMAIL);
                 const storedGroupId = await SecureStore.getItemAsync(STORE_KEYS.GROUP_ID);
 
-                if (userId && userName && userEmail) {
+                if (token && userId && userName && userEmail) {
                     setUser({ id: userId, name: userName, email: userEmail });
                     setGroupId(storedGroupId);
-                    setAuthHeaders(userId, storedGroupId);
+                    setToken(token);
+                    setAuthHeaders(token, storedGroupId);
                 }
             } catch {
                 // SecureStore not available (web?) — ignore
@@ -67,11 +71,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const persistSession = useCallback(
-        async (authUser: AuthUser, authGroupId: string | null) => {
+        async (authUser: AuthUser, authGroupId: string | null, authToken: string) => {
             setUser(authUser);
             setGroupId(authGroupId);
-            setAuthHeaders(authUser.id, authGroupId);
+            setToken(authToken);
+            setAuthHeaders(authToken, authGroupId);
 
+            await SecureStore.setItemAsync(STORE_KEYS.TOKEN, authToken);
             await SecureStore.setItemAsync(STORE_KEYS.USER_ID, authUser.id);
             await SecureStore.setItemAsync(STORE_KEYS.USER_NAME, authUser.name);
             await SecureStore.setItemAsync(STORE_KEYS.USER_EMAIL, authUser.email);
@@ -87,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const login = useCallback(
         async (email: string, password: string) => {
             const result = await apiLogin(email, password);
-            await persistSession(result.user, result.groupId);
+            await persistSession(result.user, result.groupId, result.token);
         },
         [persistSession],
     );
@@ -95,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const register = useCallback(
         async (name: string, email: string, password: string) => {
             const result = await apiRegister(name, email, password);
-            await persistSession(result.user, result.groupId);
+            await persistSession(result.user, result.groupId, result.token);
         },
         [persistSession],
     );
@@ -103,9 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const logout = useCallback(async () => {
         setUser(null);
         setGroupId(null);
+        setToken(null);
         clearAuthHeaders();
 
         try {
+            await SecureStore.deleteItemAsync(STORE_KEYS.TOKEN);
             await SecureStore.deleteItemAsync(STORE_KEYS.USER_ID);
             await SecureStore.deleteItemAsync(STORE_KEYS.USER_NAME);
             await SecureStore.deleteItemAsync(STORE_KEYS.USER_EMAIL);
@@ -118,8 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const switchGroup = useCallback(
         async (newGroupId: string) => {
             setGroupId(newGroupId);
-            if (user) {
-                setAuthHeaders(user.id, newGroupId);
+            if (token) {
+                setAuthHeaders(token, newGroupId);
             }
             try {
                 await SecureStore.setItemAsync(STORE_KEYS.GROUP_ID, newGroupId);
@@ -127,7 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // SecureStore not available (web)
             }
         },
-        [user],
+        [token],
     );
 
     return (

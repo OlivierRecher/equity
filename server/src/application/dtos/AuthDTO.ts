@@ -25,4 +25,5 @@ export interface AuthResponseDTO {
         email: string;
     };
     groupId: string | null;
+    token: string;
 }

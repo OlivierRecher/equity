@@ -36,16 +36,16 @@ export const queryClient = new QueryClient({
 // Dynamic auth headers (set by AuthContext)
 // ─────────────────────────────────────────────────
 
-let _userId: string | null = null;
+let _token: string | null = null;
 let _groupId: string | null = null;
 
-export function setAuthHeaders(userId: string, groupId: string | null) {
-    _userId = userId;
+export function setAuthHeaders(token: string, groupId: string | null) {
+    _token = token;
     _groupId = groupId;
 }
 
 export function clearAuthHeaders() {
-    _userId = null;
+    _token = null;
     _groupId = null;
 }
 
@@ -58,7 +58,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
         'Content-Type': 'application/json',
     };
 
-    if (_userId) headers['x-user-id'] = _userId;
+    if (_token) headers['Authorization'] = `Bearer ${_token}`;
     if (_groupId) headers['x-group-id'] = _groupId;
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -88,6 +88,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 interface AuthResponse {
     user: { id: string; name: string; email: string };
     groupId: string | null;
+    token: string;
 }
 
 export function apiLogin(email: string, password: string): Promise<AuthResponse> {

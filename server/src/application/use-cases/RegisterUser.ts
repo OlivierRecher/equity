@@ -4,6 +4,7 @@ import type { IUserRepository } from '../../domain/ports/IUserRepository.js';
 import { User } from '../../domain/entities/User.js';
 import { DomainError } from '../../domain/errors/DomainError.js';
 import type { RegisterInputDTO, AuthResponseDTO } from '../dtos/AuthDTO.js';
+import { signToken } from '../../infrastructure/auth/jwt.js';
 
 /**
  * Use Case: RegisterUser
@@ -39,6 +40,8 @@ export class RegisterUser {
         // 4. Persist
         const savedUser = await this.userRepository.save(user);
 
+        const token = signToken({ userId: savedUser.id, email: savedUser.email });
+
         return {
             user: {
                 id: savedUser.id,
@@ -46,6 +49,7 @@ export class RegisterUser {
                 email: savedUser.email,
             },
             groupId: null, // new user has no group yet
+            token,
         };
     }
 }

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { AuthController } from '../controllers/AuthController.js';
 
 /**
- * Auth routes — NOT protected by SimpleAuthMiddleware.
+ * Auth routes — NOT protected by JwtAuthMiddleware.
  */
 export function createAuthRoutes(controller: AuthController): Router {
     const router = Router();

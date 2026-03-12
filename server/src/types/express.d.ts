@@ -1,6 +1,6 @@
 /**
  * Augment Express Request with user/group context
- * set by the SimpleAuthMiddleware.
+ * set by the JwtAuthMiddleware.
  */
 declare namespace Express {
     interface Request {
