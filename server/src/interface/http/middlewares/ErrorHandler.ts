@@ -44,7 +44,11 @@ export function errorHandler(
     }
 
     // Unknown error → 500
-    console.error('[CRITICAL] Unhandled error:', err);
+    if (process.env['NODE_ENV'] !== 'production') {
+        console.error('[CRITICAL] Unhandled error:', err);
+    } else {
+        console.error('[CRITICAL] Unhandled error:', err.message);
+    }
     res.status(500).json({
         error: 'InternalServerError',
         message: 'An unexpected error occurred',

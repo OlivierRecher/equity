@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 // Infrastructure
 import { createPrismaClient } from '../../infrastructure/database/prisma/prismaClient.js';
@@ -35,6 +37,7 @@ import { createGroupRoutes } from './routes/group.routes.js';
 import { createAuthRoutes } from './routes/auth.routes.js';
 import { createSpaceRoutes } from './routes/space.routes.js';
 import { errorHandler } from './middlewares/ErrorHandler.js';
+import { createRequireGroupMembership } from './middlewares/requireGroupMembership.js';
 
 // ─────────────────────────────────────────────────
 // Composition Root (Dependency Injection)
@@ -72,14 +75,46 @@ const groupController = new GroupController(getGroupDashboard, createTask, updat
 const authController = new AuthController(registerUser, loginUser, updateUserProfile);
 const spaceController = new SpaceController(createGroup, getUserGroups, joinGroup, updateGroupName, getGroupMembers, removeGroupMember, deleteGroup);
 
+// Membership middleware (needs groupRepository)
+const requireGroupMembership = createRequireGroupMembership(groupRepository);
+
 // ─────────────────────────────────────────────────
 // Express App
 // ─────────────────────────────────────────────────
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// Security headers
+app.use(helmet());
+
+// CORS — restrict origins in production
+const allowedOrigins = process.env['ALLOWED_ORIGINS']?.split(',') ?? ['http://localhost:3000'];
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-group-id'],
+}));
+
+// Body size limit
+app.use(express.json({ limit: '1mb' }));
+
+// Rate limiting on auth endpoints (brute-force protection)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // 10 attempts per window
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'TooManyRequests', message: 'Too many attempts, please try again later' },
+});
+
+// General API rate limiter
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 100, // 100 requests per minute
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'TooManyRequests', message: 'Too many requests, please try again later' },
+});
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -87,9 +122,9 @@ app.get('/health', (_req, res) => {
 });
 
 // Routes (auth is NOT behind JwtAuthMiddleware)
-app.use('/auth', createAuthRoutes(authController));
-app.use('/spaces', createSpaceRoutes(spaceController));
-app.use('/groups', createGroupRoutes(groupController));
+app.use('/auth', authLimiter, createAuthRoutes(authController));
+app.use('/spaces', apiLimiter, createSpaceRoutes(spaceController, requireGroupMembership));
+app.use('/groups', apiLimiter, createGroupRoutes(groupController, requireGroupMembership));
 
 // Global error handler (must be registered AFTER routes)
 app.use(errorHandler);

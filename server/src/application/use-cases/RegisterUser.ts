@@ -20,8 +20,28 @@ export class RegisterUser {
     async execute(input: RegisterInputDTO): Promise<AuthResponseDTO> {
         const { name, email, password } = input;
 
+        // 0. Validate inputs
+        if (!name || name.trim().length === 0 || name.trim().length > 100) {
+            throw new DomainError('Le nom est requis (100 caractères max)');
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+            throw new DomainError('Adresse email invalide');
+        }
+
+        if (!password || password.length < 8) {
+            throw new DomainError('Le mot de passe doit contenir au moins 8 caractères');
+        }
+        if (!/[A-Z]/.test(password)) {
+            throw new DomainError('Le mot de passe doit contenir au moins une majuscule');
+        }
+        if (!/[0-9]/.test(password)) {
+            throw new DomainError('Le mot de passe doit contenir au moins un chiffre');
+        }
+
         // 1. Check uniqueness
-        const existing = await this.userRepository.findByEmail(email);
+        const existing = await this.userRepository.findByEmail(email.toLowerCase().trim());
         if (existing) {
             throw new DomainError('Un compte avec cet email existe déjà');
         }
