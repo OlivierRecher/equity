@@ -22,8 +22,13 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
+      "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Equity",
+      "shortName": "Equity",
+      "themeColor": "#1C1C1E",
+      "backgroundColor": "#F2F2F7"
     },
     "plugins": [
       "expo-router",
