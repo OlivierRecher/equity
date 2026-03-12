@@ -39,6 +39,7 @@ export const queryClient = new QueryClient({
 
 let _token: string | null = null;
 let _groupId: string | null = null;
+let _onUnauthorized: (() => void) | null = null;
 
 export function setAuthHeaders(token: string, groupId: string | null) {
     _token = token;
@@ -48,6 +49,11 @@ export function setAuthHeaders(token: string, groupId: string | null) {
 export function clearAuthHeaders() {
     _token = null;
     _groupId = null;
+}
+
+/** Register a callback invoked on any 401 response (auto-logout). */
+export function setOnUnauthorized(callback: () => void) {
+    _onUnauthorized = callback;
 }
 
 // ─────────────────────────────────────────────────
@@ -68,6 +74,10 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     });
 
     if (!response.ok) {
+        // Auto-logout on 401 (expired/invalid token)
+        if (response.status === 401 && _onUnauthorized) {
+            _onUnauthorized();
+        }
         const body = await response.json().catch(() => ({}));
         throw new Error(
             (body as { message?: string }).message ??

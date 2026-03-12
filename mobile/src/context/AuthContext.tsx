@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { apiLogin, apiRegister, apiUpdateProfile, setAuthHeaders, clearAuthHeaders } from '../services/api';
+import { apiLogin, apiRegister, apiUpdateProfile, setAuthHeaders, clearAuthHeaders, setOnUnauthorized } from '../services/api';
 
 // ─────────────────────────────────────────────────
 // Types
@@ -130,6 +130,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // SecureStore not available (web)
         }
     }, []);
+
+    // Auto-logout on 401 (expired/rotated token)
+    useEffect(() => {
+        setOnUnauthorized(() => {
+            logout();
+        });
+    }, [logout]);
 
     const updateProfile = useCallback(
         async (input: UpdateProfileInput) => {
