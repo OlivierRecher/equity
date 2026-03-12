@@ -12,6 +12,7 @@ import type {
     CreateSpaceOutput,
     JoinSpaceInput,
     JoinSpaceOutput,
+    GroupMemberDTO,
 } from '../types/dashboard';
 
 /**
@@ -205,6 +206,55 @@ export function updateTask(
     return apiFetch<void>(`/groups/${groupId}/tasks/${taskId}`, {
         method: 'PATCH',
         body: JSON.stringify(input),
+    });
+}
+
+// ─────────────────────────────────────────────────
+// Group Settings API
+// ─────────────────────────────────────────────────
+
+/** Update group name */
+export function updateGroupName(
+    groupId: string,
+    name: string,
+): Promise<{ id: string; name: string; code: string }> {
+    return apiFetch(`/spaces/${groupId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+    });
+}
+
+/** Fetch group members */
+export function fetchGroupMembers(
+    groupId: string,
+): Promise<GroupMemberDTO[]> {
+    return apiFetch<GroupMemberDTO[]>(`/spaces/${groupId}/members`);
+}
+
+/** Remove a member from the group */
+export function removeGroupMember(
+    groupId: string,
+    userId: string,
+): Promise<void> {
+    return apiFetch<void>(`/spaces/${groupId}/members/${userId}`, {
+        method: 'DELETE',
+    });
+}
+
+/** Delete a group entirely */
+export function deleteGroup(groupId: string): Promise<void> {
+    return apiFetch<void>(`/spaces/${groupId}`, {
+        method: 'DELETE',
+    });
+}
+
+/** Soft delete a catalog item */
+export function softDeleteCatalogItem(
+    groupId: string,
+    catalogId: string,
+): Promise<void> {
+    return apiFetch<void>(`/groups/${groupId}/catalog/${catalogId}`, {
+        method: 'DELETE',
     });
 }
 

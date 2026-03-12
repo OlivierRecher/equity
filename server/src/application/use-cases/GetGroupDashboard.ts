@@ -5,6 +5,7 @@ import type { IGroupRepository } from '../../domain/ports/IGroupRepository.js';
 import { BalanceCalculator } from '../../domain/services/BalanceCalculator.js';
 import type {
     GroupDashboardDTO,
+    GroupMemberDTO,
     UserBalanceDTO,
     TaskHistoryItemDTO,
     CatalogItemDTO,
@@ -29,13 +30,16 @@ export class GetGroupDashboard {
         this.balanceCalculator = new BalanceCalculator();
     }
 
-    async execute(groupId: string): Promise<GroupDashboardDTO> {
+    async execute(groupId: string, userId?: string): Promise<GroupDashboardDTO> {
         // 1. Fetch all data in parallel
-        const [users, tasks, catalogItems, group] = await Promise.all([
+        const [users, tasks, catalogItems, allCatalogItems, group, role, membersWithRoles] = await Promise.all([
             this.userRepository.findByGroupId(groupId),
             this.taskRepository.findByGroupId(groupId),
             this.catalogRepository.findByGroupId(groupId),
+            this.catalogRepository.findAllByGroupId(groupId),
             this.groupRepository.findById(groupId),
+            userId ? this.groupRepository.getMemberRole(groupId, userId) : Promise.resolve(null),
+            this.groupRepository.getMembers(groupId),
         ]);
 
         // 2. Compute balances using domain service
@@ -44,9 +48,9 @@ export class GetGroupDashboard {
         // 3. Get suggested next doer
         const suggestedUser = this.balanceCalculator.getSuggestedNextDoer(users, tasks);
 
-        // 4. Build user lookup for history
+        // 4. Build user lookup for history (use all catalog items including deleted for name resolution)
         const userMap = new Map(users.map((u) => [u.id, u.name]));
-        const catalogMap = new Map(catalogItems.map((c) => [c.id, c.name]));
+        const catalogMap = new Map(allCatalogItems.map((c) => [c.id, c.name]));
 
         // 5. Map balances to DTO
         const balances: UserBalanceDTO[] = users.map((user) => {
@@ -89,9 +93,14 @@ export class GetGroupDashboard {
             icon: item.icon,
         }));
 
+        const members: GroupMemberDTO[] = membersWithRoles;
+
         return {
             groupId,
             groupName: group?.name ?? 'Mon espace',
+            groupCode: group?.code ?? '',
+            role: role ?? undefined,
+            members,
             balances,
             suggestedNextDoer: suggestedUser
                 ? { userId: suggestedUser.id, userName: suggestedUser.name }

@@ -5,6 +5,7 @@ import type { UpdateCatalogItem } from '../../../application/use-cases/UpdateCat
 import type { CreateCatalogItem } from '../../../application/use-cases/CreateCatalogItem.js';
 import type { DeleteTask } from '../../../application/use-cases/DeleteTask.js';
 import type { UpdateTask } from '../../../application/use-cases/UpdateTask.js';
+import type { SoftDeleteCatalogItem } from '../../../application/use-cases/SoftDeleteCatalogItem.js';
 import type { CreateTaskInputDTO } from '../../../application/dtos/CreateTaskDTO.js';
 import type { UpdateCatalogItemInputDTO } from '../../../application/dtos/UpdateCatalogItemDTO.js';
 import type { CreateCatalogItemInputDTO } from '../../../application/dtos/CreateCatalogItemDTO.js';
@@ -21,6 +22,7 @@ export class GroupController {
         private readonly createCatalogItem: CreateCatalogItem,
         private readonly deleteTaskUseCase: DeleteTask,
         private readonly updateTaskUseCase: UpdateTask,
+        private readonly softDeleteCatalogItem: SoftDeleteCatalogItem,
     ) { }
 
     /**
@@ -33,7 +35,8 @@ export class GroupController {
     ): Promise<void> => {
         try {
             const { groupId } = req.params;
-            const dashboard = await this.getGroupDashboard.execute(groupId);
+            const userId = req.user.id;
+            const dashboard = await this.getGroupDashboard.execute(groupId, userId);
             res.status(200).json(dashboard);
         } catch (error) {
             next(error);
@@ -160,6 +163,24 @@ export class GroupController {
             });
 
             res.status(200).json({ success: true });
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * DELETE /groups/:groupId/catalog/:catalogId
+     */
+    deleteCatalogItem = async (
+        req: Request<{ groupId: string; catalogId: string }>,
+        res: Response,
+        next: NextFunction,
+    ): Promise<void> => {
+        try {
+            const { groupId, catalogId } = req.params;
+            const userId = req.user.id;
+            await this.softDeleteCatalogItem.execute({ groupId, catalogId, userId });
+            res.status(204).send();
         } catch (error) {
             next(error);
         }

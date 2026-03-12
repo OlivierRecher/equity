@@ -89,4 +89,39 @@ export class PrismaGroupRepository implements IGroupRepository {
 
         return membership?.role ?? null;
     }
+
+    async updateName(groupId: string, name: string): Promise<GroupDTO> {
+        return this.prisma.group.update({
+            where: { id: groupId },
+            data: { name },
+            select: { id: true, name: true, code: true },
+        });
+    }
+
+    async getMembers(groupId: string): Promise<{ userId: string; userName: string; role: string }[]> {
+        const memberships = await this.prisma.groupMember.findMany({
+            where: { groupId },
+            select: {
+                role: true,
+                user: { select: { id: true, name: true } },
+            },
+            orderBy: { joinedAt: 'asc' },
+        });
+
+        return memberships.map((m) => ({
+            userId: m.user.id,
+            userName: m.user.name,
+            role: m.role,
+        }));
+    }
+
+    async removeMember(groupId: string, userId: string): Promise<void> {
+        await this.prisma.groupMember.delete({
+            where: { userId_groupId: { userId, groupId } },
+        });
+    }
+
+    async delete(groupId: string): Promise<void> {
+        await this.prisma.group.delete({ where: { id: groupId } });
+    }
 }

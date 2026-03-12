@@ -36,10 +36,19 @@ export interface CatalogItemDTO {
 export interface GroupDashboardDTO {
     groupId: string;
     groupName: string;
+    groupCode: string;
+    role?: string;
+    members: GroupMemberDTO[];
     balances: UserBalanceDTO[];
     suggestedNextDoer: SuggestedDoerDTO | null;
     history: TaskHistoryItemDTO[];
     catalog: CatalogItemDTO[];
+}
+
+export interface GroupMemberDTO {
+    userId: string;
+    userName: string;
+    role: string;
 }
 
 /**

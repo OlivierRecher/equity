@@ -39,19 +39,20 @@ model GroupMember {
   userId   String
   user     User     @relation(fields: [userId], references: [id])
   groupId  String
-  group    Group    @relation(fields: [groupId], references: [id])
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
 }
 
 model Catalog {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
   defaultValue Int
   icon         String
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
   groupId      String
-  group        Group    @relation(fields: [groupId], references: [id])
+  group        Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   tasks        Task[]
 }
 
@@ -60,9 +61,9 @@ model Task {
   value     Int
   createdAt DateTime @default(now())
   groupId   String
-  group     Group    @relation(fields: [groupId], references: [id])
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   catalogId String?
-  catalog   Catalog? @relation(fields: [catalogId], references: [id])
+  catalog   Catalog? @relation(fields: [catalogId], references: [id], onDelete: SetNull)
 
   doers         TaskDoer[]
   beneficiaries TaskBeneficiary[]

@@ -14,5 +14,11 @@ export function createSpaceRoutes(controller: SpaceController): Router {
     router.post('/', controller.create);
     router.post('/join', controller.join);
 
+    router.patch('/:groupId', controller.rename);
+    router.get('/:groupId/members', controller.listMembers);
+    router.delete('/:groupId/members/:userId', controller.removeMember);
+    router.delete('/:groupId', controller.deleteSpace);
+    router.get('/:groupId/invite-code', controller.getInviteCode);
+
     return router;
 }

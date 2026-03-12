@@ -14,6 +14,7 @@ export function createGroupRoutes(controller: GroupController): Router {
     router.patch('/:groupId/tasks/:taskId', controller.updateTask);
     router.post('/:groupId/catalog', controller.addCatalogItem);
     router.patch('/:groupId/catalog/:catalogId', controller.patchCatalogItem);
+    router.delete('/:groupId/catalog/:catalogId', controller.deleteCatalogItem);
 
     return router;
 }

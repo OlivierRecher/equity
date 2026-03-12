@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -10,13 +10,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import BottomSheet from '@gorhom/bottom-sheet';
 import { fetchUserSpaces } from '../../src/services/api';
 import { useAuth } from '../../src/context/AuthContext';
+import ProfileSheet from '../../src/components/ProfileSheet';
 import type { SpaceDTO } from '../../src/types/dashboard';
 
 export default function HubScreen() {
     const router = useRouter();
-    const { switchGroup, logout } = useAuth();
+    const { user, switchGroup, logout } = useAuth();
+    const profileSheetRef = useRef<BottomSheet>(null);
 
     const { data: spaces, isLoading } = useQuery({
         queryKey: ['userSpaces'],
@@ -57,9 +60,13 @@ export default function HubScreen() {
             <View style={styles.content}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Mes espaces{'\n'}de répartition</Text>
-                    <Pressable onPress={logout} style={styles.logoutButton}>
-                        <Text style={styles.logoutText}>Déconnexion</Text>
+                    <Text style={styles.title}>Mes espaces</Text>
+                    <Pressable onPress={() => profileSheetRef.current?.snapToIndex(0)} style={styles.avatarButton}>
+                        <View style={styles.avatarCircle}>
+                            <Text style={styles.avatarInitial}>
+                                {user?.name?.charAt(0).toUpperCase() ?? '?'}
+                            </Text>
+                        </View>
                     </Pressable>
                 </View>
 
@@ -106,6 +113,8 @@ export default function HubScreen() {
                     </Pressable>
                 </View>
             </View>
+
+            <ProfileSheet ref={profileSheetRef} user={user} onLogout={logout} />
         </SafeAreaView>
     );
 }
@@ -118,7 +127,7 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 28,
-        paddingTop: 60,
+        paddingTop: 16,
         paddingBottom: 40,
     },
     header: {
@@ -134,13 +143,21 @@ const styles = StyleSheet.create({
         letterSpacing: -0.5,
         flex: 1,
     },
-    logoutButton: {
+    avatarButton: {
         paddingTop: 8,
     },
-    logoutText: {
-        fontSize: 14,
-        color: '#FF3B30',
-        fontWeight: '600',
+    avatarCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#1C1C1E',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarInitial: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
     centered: {
         flex: 1,

@@ -20,6 +20,11 @@ import { GetUserGroups } from '../../application/use-cases/GetUserGroups.js';
 import { JoinGroup } from '../../application/use-cases/JoinGroup.js';
 import { DeleteTask } from '../../application/use-cases/DeleteTask.js';
 import { UpdateTask } from '../../application/use-cases/UpdateTask.js';
+import { UpdateGroupName } from '../../application/use-cases/UpdateGroupName.js';
+import { GetGroupMembers } from '../../application/use-cases/GetGroupMembers.js';
+import { RemoveGroupMember } from '../../application/use-cases/RemoveGroupMember.js';
+import { DeleteGroup } from '../../application/use-cases/DeleteGroup.js';
+import { SoftDeleteCatalogItem } from '../../application/use-cases/SoftDeleteCatalogItem.js';
 
 // Interface
 import { GroupController } from './controllers/GroupController.js';
@@ -54,11 +59,16 @@ const getUserGroups = new GetUserGroups(groupRepository);
 const joinGroup = new JoinGroup(groupRepository);
 const deleteTask = new DeleteTask(taskRepository, groupRepository);
 const updateTask = new UpdateTask(taskRepository, groupRepository);
+const updateGroupName = new UpdateGroupName(groupRepository);
+const getGroupMembers = new GetGroupMembers(groupRepository);
+const removeGroupMember = new RemoveGroupMember(groupRepository);
+const deleteGroup = new DeleteGroup(groupRepository);
+const softDeleteCatalogItem = new SoftDeleteCatalogItem(catalogRepository, groupRepository);
 
 // 3. Controllers (Interface → depends on Use Cases)
-const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem, deleteTask, updateTask);
+const groupController = new GroupController(getGroupDashboard, createTask, updateCatalogItem, createCatalogItem, deleteTask, updateTask, softDeleteCatalogItem);
 const authController = new AuthController(registerUser, loginUser);
-const spaceController = new SpaceController(createGroup, getUserGroups, joinGroup);
+const spaceController = new SpaceController(createGroup, getUserGroups, joinGroup, updateGroupName, getGroupMembers, removeGroupMember, deleteGroup);
 
 // ─────────────────────────────────────────────────
 // Express App

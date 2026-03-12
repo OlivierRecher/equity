@@ -1,4 +1,4 @@
-# EQUITY — Récapitulatif complet des Phases 1 à 10
+# EQUITY — Récapitulatif complet des Phases 1 à 13
 
 > Ce document sert de **mémoire de projet** pour tout assistant AI travaillant sur Equity.
 > Il décrit précisément ce qui a été construit, fichier par fichier, phase par phase.
@@ -339,6 +339,100 @@ server/src/
 
 ---
 
+## Phase 13 — Hub UX + Profile Menu + Group Settings + Catalog Soft Delete
+
+### 13a. Header fix & Profile Menu
+
+#### Hub header :
+1. **`hub/index.tsx`** et **`SpacePullDown.tsx`** : `paddingTop: 60` → `16` (titre plus haut)
+2. **Bouton "Déconnexion"** remplacé par un **avatar circulaire** (initiale du user, fond noir) dans les deux écrans
+3. **`ProfileSheet`** (`src/components/ProfileSheet.tsx`) — nouveau bottom sheet :
+   - Avatar avec initiale, nom, email
+   - Bouton "Se déconnecter" rouge
+   - Ouvert au tap sur l'avatar dans le hub et dans le hub preview (SpacePullDown)
+
+### 13b. Group Settings (Admin only)
+
+#### Backend — Nouveaux endpoints sur `space.routes.ts` :
+1. `PATCH /spaces/:groupId` — renommer le groupe (`UpdateGroupName`)
+2. `GET /spaces/:groupId/members` — lister les membres (`GetGroupMembers`)
+3. `DELETE /spaces/:groupId/members/:userId` — retirer un membre (`RemoveGroupMember`)
+4. `DELETE /spaces/:groupId` — supprimer le groupe (`DeleteGroup`)
+5. `GET /spaces/:groupId/invite-code` — récupérer le code d'invitation
+
+#### Nouveaux use cases :
+- **`UpdateGroupName`** : vérifie admin, rename via `IGroupRepository.updateName()`
+- **`GetGroupMembers`** : retourne `{ userId, userName, role }[]` via `IGroupRepository.getMembers()`
+- **`RemoveGroupMember`** : vérifie admin, interdit de se retirer soi-même, supprime via `IGroupRepository.removeMember()`
+- **`DeleteGroup`** : vérifie admin, supprime le groupe (cascade Prisma)
+
+#### Modifications `IGroupRepository` + `PrismaGroupRepository` :
+- `updateName(groupId, name)` → `GroupDTO`
+- `getMembers(groupId)` → `{ userId, userName, role }[]`
+- `removeMember(groupId, userId)` → `void`
+- `delete(groupId)` → `void`
+
+#### Modifications `SpaceController` :
+- 5 nouveaux handlers : `rename`, `listMembers`, `removeMember`, `deleteSpace`, `getInviteCode`
+
+#### Wiring `server.ts` :
+- 4 nouveaux use cases instanciés et injectés dans `SpaceController` (7 dépendances au total)
+
+#### Prisma Schema — Cascade on Group delete :
+- `GroupMember` → `Group` : `onDelete: Cascade`
+- `Catalog` → `Group` : `onDelete: Cascade`
+- `Task` → `Group` : `onDelete: Cascade`
+- `Task` → `Catalog` : `onDelete: SetNull` (garde les tâches si un item catalogue est supprimé)
+
+#### Frontend — `GroupSettingsSheet` (bottom sheet sur le dashboard) :
+- **`GroupSettingsSheet`** (`src/components/dashboard/GroupSettingsSheet.tsx`) — bottom sheet (75%) contenant :
+  - Nom de l'espace : champ éditable (save on blur/submit)
+  - Code d'invitation : affichage + bouton copier (`expo-clipboard`)
+  - Liste des membres : avatar + nom + rôle + icône Trash2 pour retirer (sauf soi-même)
+  - Bouton "Supprimer l'espace" rouge avec Alert.confirm
+- **`SpacePullDown`** modifié — header dashboard restructuré :
+  - Layout : `[GroupName][ChevronDown] ........... [Settings icon]`
+  - Chevron collé au titre (pressable → pull down vers hub)
+  - Icône Settings à droite (visible admin only) → ouvre `GroupSettingsSheet`
+  - Props ajoutées : `isAdmin?: boolean`, `onSettingsPress?: () => void`
+- **`DashboardScreen`** (`app/(tabs)/index.tsx`) : ref + callbacks pour le settings sheet, props `isAdmin` et `onSettingsPress` passés à SpacePullDown
+- **`GetGroupDashboard` enrichi** (backend + frontend) :
+  - Retourne `members: GroupMemberDTO[]`, `groupCode: string`, `role?: string`
+  - Les membres sont pré-chargés dans le dashboard → aucune animation de loading dans le settings sheet
+- **Types** (`mobile/src/types/dashboard.ts`) :
+  - `GroupMemberDTO { userId, userName, role }` ajouté
+  - `GroupDashboardDTO` enrichi avec `members`, `groupCode`, `role`
+- **API** (`mobile/src/services/api.ts`) — nouvelles fonctions :
+  - `updateGroupName(groupId, name)`
+  - `fetchGroupMembers(groupId)`
+  - `removeGroupMember(groupId, userId)`
+  - `deleteGroup(groupId)`
+
+### 13c. Catalog Soft Delete (Admin only)
+
+#### Backend :
+1. **Migration Prisma** : `deletedAt DateTime?` ajouté au model `Catalog`
+2. **`ICatalogRepository`** enrichi :
+   - `findByGroupId()` → filtre `deletedAt: null` (items actifs uniquement)
+   - `findAllByGroupId()` — nouveau, sans filtre deletedAt (pour résolution des noms dans l'historique)
+   - `softDelete(catalogId)` → `update({ deletedAt: new Date() })`
+3. **`PrismaCatalogRepository`** : implémente les 3 méthodes
+4. **`GetGroupDashboard`** modifié :
+   - Utilise `findAllByGroupId()` pour le `catalogMap` (résolution des noms dans l'historique, y compris items supprimés)
+   - Utilise `findByGroupId()` pour le champ `catalog` du DTO (items actifs uniquement)
+5. **Use case `SoftDeleteCatalogItem`** : vérifie admin via `getMemberRole()`, vérifie ownership via `findById()`, appelle `softDelete()`
+6. **Route** : `DELETE /groups/:groupId/catalog/:catalogId` → `GroupController.deleteCatalogItem`
+
+#### Frontend :
+1. **`CatalogSheet`** modifié :
+   - Props ajoutées : `isAdmin: boolean`, `groupId: string`
+   - Icône Trash2 rouge sur chaque row (visible admin only)
+   - Au tap → Alert.confirm → `softDeleteCatalogItem(groupId, catalogId)` → invalidation cache
+2. **`DashboardScreen`** passe `isAdmin` et `groupId` au `CatalogSheet`
+3. **API** (`api.ts`) : `softDeleteCatalogItem(groupId, catalogId)` ajouté
+
+---
+
 ## API REST — Résumé complet des endpoints
 
 | Méthode | Route | Auth? | Description |
@@ -346,15 +440,21 @@ server/src/
 | `GET` | `/health` | Non | Health check |
 | `POST` | `/auth/register` | Non | Inscription (`{ name, email, password }`) |
 | `POST` | `/auth/login` | Non | Connexion (`{ email, password }`) |
-| `GET` | `/spaces` | x-user-id | Liste des espaces du user |
-| `POST` | `/spaces` | x-user-id | Créer un espace (`{ name, template? }`) |
-| `POST` | `/spaces/join` | x-user-id | Rejoindre via code (`{ code }`) |
-| `GET` | `/groups/:groupId/dashboard` | x-user-id, x-group-id | Dashboard complet |
-| `POST` | `/groups/:groupId/tasks` | x-user-id, x-group-id | Créer une tâche |
-| `POST` | `/groups/:groupId/catalog` | x-user-id, x-group-id | Créer un catalog item |
-| `PATCH` | `/groups/:groupId/catalog/:catalogId` | x-user-id, x-group-id | Modifier un catalog item |
-| `DELETE` | `/groups/:groupId/tasks/:taskId` | x-user-id, x-group-id | Supprimer une tâche |
-| `PATCH` | `/groups/:groupId/tasks/:taskId` | x-user-id, x-group-id | Modifier une tâche |
+| `GET` | `/spaces` | JWT | Liste des espaces du user |
+| `POST` | `/spaces` | JWT | Créer un espace (`{ name, template? }`) |
+| `POST` | `/spaces/join` | JWT | Rejoindre via code (`{ code }`) |
+| `PATCH` | `/spaces/:groupId` | JWT | Renommer le groupe (admin) |
+| `GET` | `/spaces/:groupId/members` | JWT | Lister les membres du groupe |
+| `DELETE` | `/spaces/:groupId/members/:userId` | JWT | Retirer un membre (admin) |
+| `DELETE` | `/spaces/:groupId` | JWT | Supprimer le groupe (admin) |
+| `GET` | `/spaces/:groupId/invite-code` | JWT | Récupérer le code d'invitation |
+| `GET` | `/groups/:groupId/dashboard` | JWT | Dashboard complet (+ role, members, groupCode) |
+| `POST` | `/groups/:groupId/tasks` | JWT | Créer une tâche |
+| `POST` | `/groups/:groupId/catalog` | JWT | Créer un catalog item |
+| `PATCH` | `/groups/:groupId/catalog/:catalogId` | JWT | Modifier un catalog item |
+| `DELETE` | `/groups/:groupId/catalog/:catalogId` | JWT | Soft-delete un catalog item (admin) |
+| `DELETE` | `/groups/:groupId/tasks/:taskId` | JWT | Supprimer une tâche |
+| `PATCH` | `/groups/:groupId/tasks/:taskId` | JWT | Modifier une tâche |
 
 ---
 
@@ -369,8 +469,8 @@ PrismaClient → Repositories → Use Cases → Controllers → Routes → Expre
 Ordre dans `server.ts` :
 1. `createPrismaClient()`
 2. 4 repositories : `PrismaTaskRepo`, `PrismaUserRepo`, `PrismaCatalogRepo`, `PrismaGroupRepo`
-3. 9 use cases : `GetGroupDashboard`, `CreateTask`, `UpdateCatalogItem`, `CreateCatalogItem`, `RegisterUser`, `LoginUser`, `CreateGroup`, `GetUserGroups`, `JoinGroup`
-4. 3 controllers : `GroupController`, `AuthController`, `SpaceController`
+3. 14 use cases : `GetGroupDashboard`, `CreateTask`, `UpdateCatalogItem`, `CreateCatalogItem`, `RegisterUser`, `LoginUser`, `CreateGroup`, `GetUserGroups`, `JoinGroup`, `DeleteTask`, `UpdateTask`, `UpdateGroupName`, `GetGroupMembers`, `RemoveGroupMember`, `DeleteGroup`, `SoftDeleteCatalogItem`
+4. 3 controllers : `GroupController` (7 use cases), `AuthController` (2), `SpaceController` (7)
 5. Routes montées : `/auth`, `/spaces`, `/groups`
 6. `errorHandler` (must be last)
 
@@ -392,7 +492,7 @@ mobile/
       register.tsx        # Écran inscription
     hub/
       _layout.tsx         # Stack hub
-      index.tsx           # Liste des espaces
+      index.tsx           # Liste des espaces + avatar profil
       join.tsx            # Rejoindre via code
       create/
         _layout.tsx       # Stack création
@@ -400,14 +500,18 @@ mobile/
         template.tsx      # Étape 2: template
         invite.tsx        # Étape 3: code d'invitation
   src/
-    components/dashboard/
-      ActivityFeed.tsx       # Liste historique des tâches
-      AddTaskSheet.tsx       # Bottom sheet ajout de tâche
-      BalanceChart.tsx       # Graphique barres des soldes
-      CatalogFormSheet.tsx   # Form create/edit catalog item
-      CatalogSheet.tsx       # Liste du catalogue
-      FloatingControlBar.tsx # Barre flottante bas de l'écran
-      SpacePullDown.tsx      # Pull-down gesture pour switch d'espace
+    components/
+      ProfileSheet.tsx         # Bottom sheet profil (avatar, nom, email, logout)
+      dashboard/
+        ActivityFeed.tsx       # Liste historique des tâches
+        AddTaskSheet.tsx       # Bottom sheet ajout de tâche
+        BalanceChart.tsx       # Graphique barres des soldes
+        CatalogFormSheet.tsx   # Form create/edit catalog item
+        CatalogSheet.tsx       # Liste du catalogue (+ soft delete admin)
+        FloatingControlBar.tsx # Barre flottante bas de l'écran
+        GroupSettingsSheet.tsx  # Bottom sheet réglages groupe (admin)
+        SpacePullDown.tsx      # Pull-down gesture pour switch d'espace (+ settings icon)
+        TaskDetailsSheet.tsx   # Détails d'une tâche (edit/delete)
     context/
       AuthContext.tsx        # Provider auth (login, register, logout, switchGroup)
     services/
@@ -423,7 +527,7 @@ mobile/
 1. **Hexagonal strict** : le dossier `domain/` n'importe JAMAIS depuis `infrastructure/` ou `interface/`
 2. **Pas de `any`** : TypeScript strict partout
 3. **Tests** : Vitest, coverage > 90% sur le domain layer
-4. **Auth** : headers `x-user-id` et `x-group-id` (pas de JWT pour le MVP)
+4. **Auth** : JWT Bearer token (`Authorization: Bearer <token>`) + `x-group-id` header optionnel
 5. **Polling** : 30s côté client via `react-query` `staleTime`
 6. **UI** : design iOS natif, couleurs système Apple (`#F2F2F7`, `#1C1C1E`, `#8E8E93`, `#007AFF`, `#34C759`, `#FF3B30`)
 7. **Bottom sheets** : `@gorhom/bottom-sheet` pour toutes les modales interactives
@@ -435,10 +539,8 @@ mobile/
 
 ## Prochaines étapes potentielles
 
-- Ajout de la gestion fine des absences dans l'UI (toggle membres bénéficiaires lors de l'ajout de tâche — déjà partiellement implémenté)
 - Planning/suggestions de tâches plus avancées
 - Notifications push
 - OAuth (Google) en remplacement de l'auth par password
-- Profil utilisateur + avatar
 - Dark mode complet
 - WebSockets pour le temps réel (post-MVP)

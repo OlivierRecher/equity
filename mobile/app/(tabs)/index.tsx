@@ -20,7 +20,9 @@ import type { EditTaskData } from '../../src/components/dashboard/AddTaskSheet';
 import CatalogSheet from '../../src/components/dashboard/CatalogSheet';
 import CatalogFormSheet from '../../src/components/dashboard/CatalogFormSheet';
 import TaskDetailsSheet from '../../src/components/dashboard/TaskDetailsSheet';
+import GroupSettingsSheet from '../../src/components/dashboard/GroupSettingsSheet';
 import SpacePullDown from '../../src/components/dashboard/SpacePullDown';
+import { useRouter } from 'expo-router';
 import type { UserBalanceDTO, CatalogItemDTO, TaskHistoryItemDTO } from '../../src/types/dashboard';
 
 
@@ -64,6 +66,8 @@ export default function DashboardScreen() {
   const catalogSheetRef = useRef<BottomSheet>(null);
   const catalogFormRef = useRef<BottomSheet>(null);
   const taskDetailsRef = useRef<BottomSheet>(null);
+  const settingsSheetRef = useRef<BottomSheet>(null);
+  const router = useRouter();
 
   // Track which catalog item is being edited (null = create mode)
   const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItemDTO | null>(null);
@@ -82,6 +86,15 @@ export default function DashboardScreen() {
     queryFn: () => fetchGroupDashboard(groupId!),
     enabled: !!groupId,
   });
+
+  const openSettingsSheet = useCallback(() => {
+    settingsSheetRef.current?.snapToIndex(0);
+  }, []);
+
+  const onGroupDeleted = useCallback(() => {
+    settingsSheetRef.current?.close();
+    router.replace('/hub' as any);
+  }, [router]);
 
   const openAddSheet = useCallback(() => {
     setEditingTask(null);
@@ -164,7 +177,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <SpacePullDown groupName={data.groupName ?? 'Mon espace'}>
+    <SpacePullDown groupName={data.groupName ?? 'Mon espace'} isAdmin={data.role === 'ADMIN'} onSettingsPress={openSettingsSheet}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView
           style={styles.scroll}
@@ -218,6 +231,8 @@ export default function DashboardScreen() {
         <CatalogSheet
           ref={catalogSheetRef}
           catalog={data.catalog}
+          groupId={groupId ?? ''}
+          isAdmin={data.role === 'ADMIN'}
           onAddPress={openCatalogFormCreate}
           onItemPress={openCatalogFormEdit}
         />
@@ -236,6 +251,18 @@ export default function DashboardScreen() {
           onClose={closeTaskDetails}
           onEdit={editTaskFromDetails}
         />
+
+        {data.role === 'ADMIN' && (
+          <GroupSettingsSheet
+            ref={settingsSheetRef}
+            groupId={groupId ?? ''}
+            groupName={data.groupName}
+            groupCode={data.groupCode}
+            members={data.members}
+            currentUserId={currentUserId}
+            onDeleted={onGroupDeleted}
+          />
+        )}
       </SafeAreaView>
     </SpacePullDown>
   );

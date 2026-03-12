@@ -1,21 +1,47 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useCallback } from 'react';
 import {
+    View,
     Text,
     StyleSheet,
     Pressable,
+    Alert,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Plus, ChevronRight } from 'lucide-react-native';
+import { Plus, ChevronRight, Trash2 } from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { softDeleteCatalogItem } from '../../services/api';
 import type { CatalogItemDTO } from '../../types/dashboard';
 
 interface CatalogSheetProps {
     catalog: CatalogItemDTO[];
+    groupId: string;
+    isAdmin: boolean;
     onAddPress: () => void;
     onItemPress: (item: CatalogItemDTO) => void;
 }
 
 const CatalogSheet = forwardRef<BottomSheet, CatalogSheetProps>(
-    ({ catalog, onAddPress, onItemPress }, ref) => {
+    ({ catalog, groupId, isAdmin, onAddPress, onItemPress }, ref) => {
+        const queryClient = useQueryClient();
+
+        const handleDelete = useCallback((item: CatalogItemDTO) => {
+            Alert.alert(
+                'Supprimer la tâche',
+                `Supprimer « ${item.name} » du catalogue ? Les tâches existantes ne seront pas affectées.`,
+                [
+                    { text: 'Annuler', style: 'cancel' },
+                    {
+                        text: 'Supprimer',
+                        style: 'destructive',
+                        onPress: async () => {
+                            await softDeleteCatalogItem(groupId, item.id);
+                            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+                        },
+                    },
+                ],
+            );
+        }, [groupId, queryClient]);
+
         return (
             <BottomSheet
                 ref={ref}
@@ -25,20 +51,28 @@ const CatalogSheet = forwardRef<BottomSheet, CatalogSheetProps>(
                 backgroundStyle={styles.sheetBackground}
                 handleIndicatorStyle={styles.handleIndicator}
             >
-
-
                 <BottomSheetScrollView contentContainerStyle={styles.list}>
                     {catalog.map((item) => (
-                        <Pressable
-                            key={item.id}
-                            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-                            onPress={() => onItemPress(item)}
-                        >
-                            <Text style={styles.icon}>{item.icon}</Text>
-                            <Text style={styles.name}>{item.name}</Text>
-                            <Text style={styles.value}>{item.defaultValue} pts</Text>
-                            <ChevronRight size={16} color="#C7C7CC" strokeWidth={2.5} />
-                        </Pressable>
+                        <View key={item.id} style={styles.rowContainer}>
+                            <Pressable
+                                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                                onPress={() => onItemPress(item)}
+                            >
+                                <Text style={styles.icon}>{item.icon}</Text>
+                                <Text style={styles.name}>{item.name}</Text>
+                                <Text style={styles.value}>{item.defaultValue} pts</Text>
+                                <ChevronRight size={16} color="#C7C7CC" strokeWidth={2.5} />
+                            </Pressable>
+                            {isAdmin && (
+                                <Pressable
+                                    style={styles.deleteIcon}
+                                    onPress={() => handleDelete(item)}
+                                    hitSlop={8}
+                                >
+                                    <Trash2 size={16} color="#FF3B30" strokeWidth={2.5} />
+                                </Pressable>
+                            )}
+                        </View>
                     ))}
 
                     {/* Add button at end of list */}
@@ -79,13 +113,22 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         gap: 8,
     },
+    rowContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     row: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#F2F2F7',
         borderRadius: 14,
         padding: 16,
         gap: 12,
+    },
+    deleteIcon: {
+        padding: 8,
     },
     rowPressed: {
         backgroundColor: '#E5E5EA',

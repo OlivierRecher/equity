@@ -39,4 +39,16 @@ export interface IGroupRepository {
 
     /** Get the role of a user in a group (or null if not a member). */
     getMemberRole(groupId: string, userId: string): Promise<string | null>;
+
+    /** Update the group name. */
+    updateName(groupId: string, name: string): Promise<GroupDTO>;
+
+    /** Get all members of a group with their role. */
+    getMembers(groupId: string): Promise<{ userId: string; userName: string; role: string }[]>;
+
+    /** Remove a member from a group. */
+    removeMember(groupId: string, userId: string): Promise<void>;
+
+    /** Delete a group entirely. */
+    delete(groupId: string): Promise<void>;
 }

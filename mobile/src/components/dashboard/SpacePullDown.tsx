@@ -17,11 +17,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDown, Settings } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { fetchUserSpaces } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import type { SpaceDTO } from '../../types/dashboard';
+import type BottomSheet from '@gorhom/bottom-sheet';
+import ProfileSheet from '../ProfileSheet';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const PULL_THRESHOLD = 80;
@@ -31,14 +33,17 @@ const SNAP_BACK_SPRING = { damping: 22, stiffness: 200, mass: 0.7 };
 interface SpacePullDownProps {
     children: React.ReactNode;
     groupName: string;
+    isAdmin?: boolean;
+    onSettingsPress?: () => void;
 }
 
-export default function SpacePullDown({ children, groupName }: Readonly<SpacePullDownProps>) {
+export default function SpacePullDown({ children, groupName, isAdmin, onSettingsPress }: Readonly<SpacePullDownProps>) {
     const translateY = useSharedValue(0);
     const startY = useSharedValue(0);
     const router = useRouter();
     const queryClient = useQueryClient();
-    const { switchGroup, groupId, logout } = useAuth();
+    const { user, switchGroup, groupId, logout } = useAuth();
+    const profileSheetRef = React.useRef<BottomSheet>(null);
 
     const { data: spaces, isLoading } = useQuery({
         queryKey: ['userSpaces'],
@@ -114,10 +119,14 @@ export default function SpacePullDown({ children, groupName }: Readonly<SpacePul
                 <View style={styles.hubContent}>
                     <View style={styles.hubHeader}>
                         <Text style={styles.hubTitle}>
-                            Mes espaces{'\n'}de répartition
+                            Mes espaces
                         </Text>
-                        <Pressable onPress={logout} style={styles.logoutButton}>
-                            <Text style={styles.logoutText}>Déconnexion</Text>
+                        <Pressable onPress={() => profileSheetRef.current?.snapToIndex(0)} style={styles.avatarButton}>
+                            <View style={styles.avatarCircle}>
+                                <Text style={styles.avatarInitial}>
+                                    {user?.name?.charAt(0).toUpperCase() ?? '?'}
+                                </Text>
+                            </View>
                         </Pressable>
                     </View>
 
@@ -174,19 +183,28 @@ export default function SpacePullDown({ children, groupName }: Readonly<SpacePul
                 </View>
             </SafeAreaView>
 
+            <ProfileSheet ref={profileSheetRef} user={user} onLogout={logout} />
+
             {/* ── Foreground: Dashboard ────────────────────────────── */}
             <Animated.View style={[styles.dashboard, dashboardStyle]}>
                 {/* Draggable header zone */}
                 <GestureDetector gesture={panGesture}>
                     <Animated.View>
-                        <Pressable style={styles.headerTap} onPress={toggleOverlay}>
-                            <Text style={styles.groupNameHeader} numberOfLines={1}>
-                                {groupName}
-                            </Text>
-                            <Animated.View style={chevronStyle}>
-                                <ChevronDown size={20} color="#8E8E93" strokeWidth={2.5} />
-                            </Animated.View>
-                        </Pressable>
+                        <View style={styles.headerTap}>
+                            <Pressable style={styles.headerLeft} onPress={toggleOverlay}>
+                                <Text style={styles.groupNameHeader} numberOfLines={1}>
+                                    {groupName}
+                                </Text>
+                                <Animated.View style={chevronStyle}>
+                                    <ChevronDown size={20} color="#8E8E93" strokeWidth={2.5} />
+                                </Animated.View>
+                            </Pressable>
+                            {isAdmin && onSettingsPress && (
+                                <Pressable onPress={onSettingsPress} hitSlop={10} style={styles.headerSettingsIcon}>
+                                    <Settings size={22} color="#8E8E93" strokeWidth={2.5} />
+                                </Pressable>
+                            )}
+                        </View>
                     </Animated.View>
                 </GestureDetector>
 
@@ -210,7 +228,7 @@ const styles = StyleSheet.create({
     hubContent: {
         flex: 1,
         paddingHorizontal: 28,
-        paddingTop: 60,
+        paddingTop: 16,
     },
     hubHeader: {
         flexDirection: 'row',
@@ -225,13 +243,21 @@ const styles = StyleSheet.create({
         letterSpacing: -0.5,
         flex: 1,
     },
-    logoutButton: {
+    avatarButton: {
         paddingTop: 8,
     },
-    logoutText: {
-        fontSize: 14,
-        color: '#FF3B30',
-        fontWeight: '600',
+    avatarCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#1C1C1E',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatarInitial: {
+        fontSize: 17,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
     hubLoading: {
         paddingVertical: 40,
@@ -316,15 +342,25 @@ const styles = StyleSheet.create({
     headerTap: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        justifyContent: 'space-between',
         paddingHorizontal: 24,
         paddingTop: 56,
         paddingBottom: 12,
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        flex: 1,
+    },
+    headerSettingsIcon: {
+        padding: 4,
+        marginLeft: 12,
     },
     groupNameHeader: {
         fontSize: 28,
         fontWeight: '800',
         color: '#1C1C1E',
-        flex: 1,
+        flexShrink: 1,
     },
 });
