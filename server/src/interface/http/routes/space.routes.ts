@@ -1,6 +1,8 @@
 import { Router, type RequestHandler } from 'express';
 import type { SpaceController } from '../controllers/SpaceController.js';
 import { jwtAuthMiddleware } from '../middlewares/JwtAuthMiddleware.js';
+import { validate } from '../validation/validate.js';
+import { createGroupSchema, joinGroupSchema, renameGroupSchema } from '../validation/schemas.js';
 
 /**
  * Space routes — all protected by JWT auth.
@@ -13,11 +15,11 @@ export function createSpaceRoutes(controller: SpaceController, requireGroupMembe
 
     // Global space routes (no groupId — no membership check needed)
     router.get('/', controller.list);
-    router.post('/', controller.create);
-    router.post('/join', controller.join);
+    router.post('/', validate(createGroupSchema), controller.create);
+    router.post('/join', validate(joinGroupSchema), controller.join);
 
     // Group-specific routes (require membership)
-    router.patch('/:groupId', requireGroupMembership, controller.rename);
+    router.patch('/:groupId', requireGroupMembership, validate(renameGroupSchema), controller.rename);
     router.get('/:groupId/members', requireGroupMembership, controller.listMembers);
     router.delete('/:groupId/members/:userId', requireGroupMembership, controller.removeMember);
     router.delete('/:groupId', requireGroupMembership, controller.deleteSpace);
