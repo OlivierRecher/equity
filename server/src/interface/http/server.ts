@@ -88,11 +88,13 @@ const app = express();
 app.use(helmet());
 
 // CORS — restrict origins in production
-const allowedOrigins = process.env['ALLOWED_ORIGINS']?.split(',') ?? ['http://localhost:3000'];
+const corsOriginEnv = process.env['CORS_ORIGIN'];
+const allowedOrigins = corsOriginEnv ?? ['http://localhost:8081', 'http://localhost:3000'];
+
 app.use(cors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-group-id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-group-id', 'x-user-id'],
 }));
 
 // Body size limit

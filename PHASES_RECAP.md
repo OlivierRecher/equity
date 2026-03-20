@@ -433,6 +433,24 @@ server/src/
 
 ---
 
+## Phase 15 — Dockerisation de l'API & Production
+
+**Objectif :** Préparer le backend pour un VPS Linux via conteneurs Docker.
+
+### Ce qui a été fait :
+1. **Dockerfile Multi-Stage** :
+   - `builder` : Installe toutes les dépendances, génère Prisma, compile TypeScript.
+   - `runner` : Image Node.js 20 Alpine allégée, avec uniquement `node_modules` de prod, `prisma`, et `dist`.
+2. **docker-compose.prod.yml** :
+   - Service `db` : PostgreSQL 15 avec persistance des données.
+   - Service `api` : Construit depuis le `Dockerfile`, attend `db`, variables d'environnement centralisées.
+3. **Script de Démarrage (`start.sh`)** :
+   - Lance `npx prisma migrate deploy` au démarrage du conteneur API pour s'assurer que la base de données est à jour avant de lancer le serveur.
+4. **CORS de Production (`server.ts`)** :
+   - Configuré pour lire la variable `CORS_ORIGIN` et supporter la PWA hébergée (Netlify), tout en gardant des fallbacks `localhost` pour les tests natifs ou web.
+
+---
+
 ## API REST — Résumé complet des endpoints
 
 | Méthode | Route | Auth? | Description |
